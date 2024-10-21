@@ -1,0 +1,16 @@
+python -m venv entorno_virtual
+source entorno_virtual/Scripts/activate
+pip install fastapi 
+pip install uvicorn 
+pip install matplotlib 
+pip install numpy
+pip freeze > requirements.txt
+
+#Primera corrida
+python app.py
+
+#Corridas cuando realizo una modificacion
+uvicorn app:app --reload
+
+#Antes de desplegar en vercel:
+pip freeze > requirements.txt
