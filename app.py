@@ -16,7 +16,9 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5500", "http://localhost:3000"],  # Cambia esto si es necesario
+    allow_origins=["http://127.0.0.1:5500",
+                  "http://localhost:3000"
+                  "https://pw-app-filament-winding.vercel.app"],  # Cambia esto si es necesario
     allow_credentials=True,
     allow_methods=["*"],  # Permitir todos los métodos
     allow_headers=["*"],  # Permitir todos los encabezados
