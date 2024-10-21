@@ -9,7 +9,7 @@ import os
 from generate_plot import generate_plot as generate_plot_function
 from download_plot import download_plot as download_plot_function
 from pydantic import BaseModel
-
+from generate_and_download_plot import generate_and_download_plot as generate_and_download_plot_function
 
 app = FastAPI()
 
@@ -36,3 +36,7 @@ async def generate_plot(coords: Coordinates):
 @app.get("/download-plot/")
 async def download_plot(X: float, Y: float, Z: float):
     return download_plot_function(X, Y, Z)
+
+@app.post("/generate-and-download-plot/")
+async def generate_and_download_plot(coords: Coordinates):
+    return generate_and_download_plot_function(coords)
