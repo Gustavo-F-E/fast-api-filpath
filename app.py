@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import matplotlib.pyplot as plt
 import os
+from fastapi.middleware.cors import CORSMiddleware
 
 from generate_plot import generate_plot as generate_plot_function
 from download_plot import download_plot as download_plot_function
@@ -13,6 +14,13 @@ from generate_and_download_plot import generate_and_download_plot as generate_an
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:5500"],  # Cambia esto si es necesario
+    allow_credentials=True,
+    allow_methods=["*"],  # Permitir todos los métodos
+    allow_headers=["*"],  # Permitir todos los encabezados
+)
 
 @app.get('/')
 def hello_world():
