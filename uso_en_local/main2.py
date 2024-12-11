@@ -1,0 +1,254 @@
+from vinogradov import vinodradov
+from vinogradov import obteniendo_orden_del_patron
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import math
+import json
+
+
+def graficar_patrones(diccionario_capa, guardar_grafico, graficar_solo_esquemas, i):
+    for index, lista in enumerate(diccionario_capa["listas_de_patrones"]):
+        lista = orden_de_listas_areas(diccionario_capa["NP"], lista)
+        paso = diccionario_capa["patrones"][index][3]
+        ptr = diccionario_capa["patrones"][index][1]
+        Dcco = diccionario_capa["patrones"][index][4]
+        orden = diccionario_capa["listas_de_patrones"][index]
+        graficar_multiples_areas(lista, diccionario_capa["NP"], paso, index, orden, ptr, Dcco, diccionario_capa, guardar_grafico, graficar_solo_esquemas, i)
+
+def dibujar_area(puntos, ax, color, N):
+    # Separar las coordenadas X e Y de los puntos
+    x, y = zip(*puntos)
+    
+    # Dibujar el polígono cerrando la figura al unir el primer y último punto
+    ax.fill(x, y, color, edgecolor='black')  # Relleno con el color especificado y bordes negros
+
+    # Configurar límites del gráfico si es necesario (opcional)
+    ax.set_xlim(0, N)
+    ax.set_ylim(0, N)
+
+# Llamar a la función para generar las áreas
+def areas_patron(N):
+    x0 = []
+    xN = []
+    y0 = []
+    yN = []
+    for i in range(0, N + 1):
+        x0.append((0, i))
+        xN.append((N, i))
+        y0.append((i, 0))
+        yN.append((i, N))
+    
+    areas_x = []
+    areas_y = []
+    for k in range(0, N):
+        kx=k
+        ky=N-1-k
+        areas_x.append([y0[kx], yN[kx], yN[kx + 1], y0[kx + 1]])  # Llenamos áreas x
+        areas_y.append([x0[ky], x0[ky + 1], xN[ky + 1], xN[ky]])  # Llenamos áreas y
+    
+    return areas_x, areas_y
+
+def graficar_multiples_areas(lista_de_areas, N, paso, index2, orden, ptr, Dcco, diccionario_capa, guardar_grafico, graficar_solo_esquemas, indice):
+    diametro_mandril = 1
+    ancho = 1
+    uuid_6 = 1
+    longitud_util = 1
+    alfa = 1
+    alfa_original = 1
+    NP = diccionario_capa["NP"]
+    listas_de_patrones = diccionario_capa["listas_de_patrones"]
+    # Crear la figura y el eje una sola vez
+    fig1, ax1 = plt.subplots()
+
+    # Iterar sobre la lista de áreas con el índice
+    for index, puntos in enumerate(lista_de_areas):
+        # Verificar si el índice es par o impar
+        if index % 2 == 0:
+            dibujar_area(puntos, ax1, 'blue', N)
+            # Código para manejar el caso par
+        else:
+            dibujar_area(puntos, ax1, 'red', N)
+            # Código para manejar el caso impar
+    
+    '''
+    print(orden)
+    print(len(orden))
+    print(listas_de_patrones)
+    # Dividir el vector "orden" en tramos de 20
+    if len(orden)>20:
+        tramos_de_20=math.floor(len(orden)/20)
+        texto_orden=[]
+        contador=0
+        for i in range(tramos_de_20):
+            for j in range(20):
+                texto_orden[i][j]=orden[contador]
+                contador=contador+1
+        for k in range(len(orden)-contador):
+            texto_orden[tramos_de_20][k]=orden[contador]
+            contador=contador+1
+    else:
+        texto_orden=orden
+
+    print(texto_orden)
+    '''
+    lineas_orden = [orden[i:i + 20] for i in range(0, len(orden), 20)]
+
+    # Convertir cada tramo en una cadena y unirlas con saltos de línea
+    texto_orden = "\n".join([", ".join(map(str, linea)) for linea in lineas_orden])
+    
+    # Ajustar el espacio inferior para asegurar que el subtítulo se muestre
+    plt.subplots_adjust(bottom=0.2)
+    
+    #Formatear ambos ejes para mostrar solo números enteros o flotantes
+    '''
+    if NP<5:
+        ax.xaxis.set_major_formatter(ticker.StrMethodFormatter('{x:.2f}'))
+        ax.xaxis.set_major_formatter(ticker.StrMethodFormatter('{x:.2f}'))
+    else:
+        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
+        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
+    '''
+    
+    # Mostrar y/o guardar el gráfico
+    if graficar_solo_esquemas==True:
+        nombre_archivo=f"imagenes/patrones/NP={NP}_esquema_patron_No_{index2+1}_.png"
+        nombre_archivo_miniatura=f"imagenes/patrones/NP={NP}_esquema_patron_No_{index2+1}__mini.png"
+    else: 
+        nombre_archivo=f"imagenes/diam_{diametro_mandril}_long={longitud_util}_ancho={ancho}_alfa={alfa_original}_{uuid_6}_NP={NP}_esquema_patron_Nº_{index2+1}_.png"
+    
+    if guardar_grafico:
+        
+        # Añadir el título
+        ax1.set_title(f" NP = {N}; Patrón Nº {index2+1}; paso = {paso}; Ptr = {ptr}; Dcco = {round(Dcco,5)}", fontsize=20, fontweight='bold', pad=20)
+        # Subtítulo en múltiples líneas usando variables
+        ax1.text(
+        0.5, -0.2,  # Ajusta la posición del subtítulo en Y para que quede justo debajo del título
+        f"Orden de los patrones:\n[{texto_orden}]",
+        ha='center', va='top', transform=ax1.transAxes,
+        fontsize=10  # Tamaño de fuente opcional
+        )
+        # Etiquetar los ejes
+        ax1.set_xlabel('X')
+        ax1.set_ylabel('Y')
+        plt.savefig(nombre_archivo, dpi=300, bbox_inches='tight')  # Guarda el gráfico como PNG
+    plt.close()
+    
+    fig2, ax2 = plt.subplots()
+
+    # Iterar sobre la lista de áreas con el índice
+    for index, puntos in enumerate(lista_de_areas):
+        # Verificar si el índice es par o impar
+        if index % 2 == 0:
+            dibujar_area(puntos, ax2, 'blue', N)
+            # Código para manejar el caso par
+        else:
+            dibujar_area(puntos, ax2, 'red', N)
+            # Código para manejar el caso impar
+    if guardar_grafico:
+        plt.xticks([])
+        plt.yticks([])
+        # Añadir el título
+        ax2.set_title(f" NP = {N}; Patrón Nº {index2+1}", fontsize=30, fontweight='bold', pad=20)
+        ax2.set_xlabel('')
+        ax2.set_ylabel('')
+        plt.savefig(nombre_archivo_miniatura, dpi=40, bbox_inches='tight') # Guarda el gráfico en miniatura como PNG
+          # Guarda el gráfico como PNG
+        #print(f"Gráfico guardado como: {nombre_archivo}")
+    plt.close()
+    # Mostrar el gráfico con todas las áreas
+    #plt.show()
+    
+    
+    filename="imagenes/patrones/patrones.json"
+    #print(orden)
+
+    with open(filename, 'r') as json_file:
+        datos_existentes = json.load(json_file) #Cargamos el JSON como un diccionario
+    key=f"NP_{NP}"
+    value=f"listado_patron_N_{index2+1}"
+    nombre_archivo_png=f"NP={NP}_esquema_patron_No_{index2+1}_.png"
+
+    if index2==0:
+        datos_existentes[key].update({"Dcco_minimo":abs(Dcco)})
+    else:
+        if abs(Dcco)<datos_existentes[key]["Dcco_minimo"]:
+            datos_existentes[key].update({"Dcco_minimo":abs(Dcco)})
+        else: pass
+
+    datos_existentes[key].update({
+      value:{
+        "NP": NP,
+        "Paso": paso,
+        "Ptr": ptr,
+        "Dcco": Dcco,
+        "Orden_del_patron": orden,
+        "nombre_archivo": nombre_archivo_png,
+        }
+      })
+    #print('datos_existentes[key]["Dcco_minimo"]')
+    #print(datos_existentes[key]["Dcco_minimo"])
+
+    with open(filename, 'w') as json_file:
+        json.dump(datos_existentes, json_file, ensure_ascii=False, indent=4)
+    #print(f"Archivo JSON '{filename}' actualizado exitosamente.")
+
+
+def orden_de_listas_areas(NP, ORDEN):
+    areas_x, areas_y = areas_patron(NP)
+    lista_areas = []
+    
+    for i in range(len(ORDEN)):  # Ajustar índice
+        lista_areas.append(areas_y[ORDEN[i] - 1])
+        lista_areas.append(areas_x[ORDEN[i] - 1])
+    #print(lista_areas)
+    return lista_areas
+
+######################################################
+######################################################
+#Programa principal
+diccionario_capa = {}
+inicio=1
+fin=100
+filename="imagenes/patrones/patrones.json"
+
+try:
+    with open(filename, 'w') as json_file:
+        datos_existentes = {}
+        for j in range(inicio,fin+1):
+            key=f"NP_{j}"
+            datos_existentes[key]={
+                "NP" : j
+            }
+        json.dump(datos_existentes, json_file, indent=4)
+    #print(f"Archivo JSON '{filename}' actualizado exitosamente.")
+except Exception as e:
+    pass
+    #print(f"Error al escribir el archivo JSON: {e}")
+
+
+for i in range(inicio,fin+1):
+    diccionario_capa["NP"] = i
+    patrones = vinodradov(diccionario_capa)
+    listas_de_patrones = [
+        obteniendo_orden_del_patron(diccionario_capa["NP"], patron[3])
+        for patron in patrones
+    ]
+    diccionario_capa["listas_de_patrones"] = listas_de_patrones
+    diccionario_capa["patrones"] = patrones
+    #print('len("listas_de_patrones")')
+    #print(len(listas_de_patrones))
+    
+
+    with open(filename, 'r') as json_file:
+        datos_existentes = json.load(json_file) #Cargamos el JSON como un diccionario
+    key=f"NP_{i}"
+    value="cantidad_de_patrones"
+    datos_existentes[key].update({
+      value:len(listas_de_patrones)
+      })
+    with open(filename, 'w') as json_file:
+        json.dump(datos_existentes, json_file, indent=4)
+    #print(f"Archivo JSON '{filename}' actualizado exitosamente.")
+    
+    graficar_patrones(diccionario_capa, True, True, i)
+    
