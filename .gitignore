@@ -1,5 +1,12 @@
 entorno_virtual/
-uso_en_local/imagenes/patrones/
+uso_en_local/imagenes/
+uso_en_local/__pycache__/
+corridas/
+imagenes/
+imagenes_notebook/
 .env
 pruebas.REST
 pruebas.html
+proxy_git.txt
+.db
+*.db

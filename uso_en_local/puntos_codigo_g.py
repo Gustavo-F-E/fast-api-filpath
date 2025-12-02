@@ -36,7 +36,7 @@ def puntos_codigo_g(diccionario_capa):
     
     #angulo_vuelta_dwell=(2*PI/NP)*(paso_angular_patron-1)
     
-    CENTRADO_EN_Y=L_retorno+longitud_util/2
+    CENTRADO_EN_Y = L_retorno /2 + longitud_util / 2
     
     XX=2*PI #Giro del mandril en radianes
     YY=L_retorno-CENTRADO_EN_Y #Desplazamiento del carro en mm
@@ -109,31 +109,6 @@ def puntos_codigo_g(diccionario_capa):
                 pass
             puntos_codigo_g[index+1, :] = [XX, YY, AA, FF]
             index=index+1
-    '''
-    print("orden_del_patron_elegido")
-    print(orden_del_patron_elegido)
-    print("")
-    print("angulos_cara_a")
-    print(angulos_cara_a)
-    print("angulos_cara_a_ordenado")
-    print(angulos_cara_a_ordenado)
-    print("cara_A_primer_cuadrante")
-    print(cara_A_primer_cuadrante)
-    print("")
-    print("angulos_cara_b_arriba")
-    print(angulos_cara_b_arriba)
-    print("angulos_cara_b_arriba_ordenado")
-    print(angulos_cara_b_arriba_ordenado)
-    print("cara_B_ida_primer_cuadrante")
-    print(cara_B_ida_primer_cuadrante)
-    print("")
-    print("angulos_cara_b_abajo")
-    print(angulos_cara_b_abajo)
-    print("angulos_cara_b_abajo_ordenado")
-    print(angulos_cara_b_abajo_ordenado)
-    print("cara_B_vuelta_primer_cuadrante")
-    print(cara_B_vuelta_primer_cuadrante)
-    '''
 
 
     diccionario_capa["puntos_codigo_g"] = puntos_codigo_g
@@ -153,7 +128,7 @@ def puntos_codigo_g(diccionario_capa):
         datos_existentes = {}
 
     # Actualizar el diccionario con nuevos cálculos
-    datos_existentes["puntos_codigo_g_centrados"] = puntos_codigo_g.tolist()
+    datos_existentes["puntos_codigo_g"] = puntos_codigo_g.tolist()
 
     # Escribir el diccionario actualizado en el archivo JSON
     try:

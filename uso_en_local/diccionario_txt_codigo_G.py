@@ -2,14 +2,13 @@ import uuid
 import json
 from txt_G_code3 import txt_G_code3
 
-def diccionario_txt_codigo_G(lista_de_capas):
-    diccionario_codigo_G = txt_G_code3(lista_de_capas)
+def diccionario_txt_codigo_G(lista_de_capas, nombre_del_estudio):
+    diccionario_codigo_G = txt_G_code3(lista_de_capas, nombre_del_estudio)
     print("Main")
     if len(lista_de_capas)==1:
-      print("")
-      lista=diccionario_codigo_G["Capa_Unica"]
-      for i in range(len(lista)):
-        print(lista[i])
+        print("")
+        lista=diccionario_codigo_G["Capa_Unica"]
+        print(lista[0])
     if len(lista_de_capas)!=1:
         for i in range(len(lista_de_capas)):
             lista=diccionario_codigo_G[f"Capa_{str(i+1)}"]
@@ -17,13 +16,16 @@ def diccionario_txt_codigo_G(lista_de_capas):
             print(f"Capa_{str(i+1)}")
             for j in range(len(lista)):
                 print(lista[j])
-
+    # Verifica si "Total" existe en el diccionario, si no, lo agrega
+    if "Total" not in diccionario_codigo_G:
+        print("La clave 'Total' no existe. Se agregará con un valor predeterminado.")
+        diccionario_codigo_G["Total"] = []  # Puedes cambiar el valor predeterminado si es necesario
     lista=diccionario_codigo_G["Total"]
     print("")
     print("Total")
     for i in range(len(lista)):
-      print(lista[i])
-      
+        print(lista[i])
+
     diametro_mandril=lista_de_capas[0].diccionario_capa["diametro_mandril"]
     longitud_util=lista_de_capas[0].diccionario_capa["longitud_util"]
     ancho=lista_de_capas[0].diccionario_capa["ancho"]

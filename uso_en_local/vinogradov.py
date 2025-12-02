@@ -18,7 +18,7 @@ def vinodradov(diccionario_capa):
     Dcco.append(1/(2*1))
 
     for numeros_excluido in numeros_excluidos:
-      
+    
         A=[]
         B=[]
         C=[]

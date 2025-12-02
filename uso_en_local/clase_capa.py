@@ -2,6 +2,7 @@ import math
 import json
 import uuid
 import os
+import sqlite3
 from calculos_iniciales import calculos_iniciales
 from vinogradov import vinodradov, obteniendo_orden_del_patron
 from grafico_de_patrones import orden_de_listas_areas, graficar_multiples_areas
@@ -17,21 +18,23 @@ class GeneradorPatrones:
         uuid_aleatorio = str(uuid.uuid4())
         uuid_6=uuid_aleatorio[:6] # Puedes recortar a la longitud que desees si necesitas menos de 36 caracteres
         self.filename=f"diam_{diametro_mandril}_long={longitud_util}_ancho={ancho}_alfa={alfa}_{uuid_6}.json"
+        self.filename2=f"diam_{diametro_mandril}_long={longitud_util}_ancho={ancho}_alfa={alfa}_{uuid_6}"
         
         self.diccionario_capa = {
             "filename": self.filename,
+            "filename2": self.filename2,
             "uuid_6": uuid_6,
             "PI": math.pi,
             "diametro_mandril": diametro_mandril,
             "longitud_util": longitud_util,
-            "espesor": espesor,
-            "coeficiente_rozamiento": coeficiente_rozamiento,
-            "pines": pines,
             "alfa": alfa,
             "alfa_original": alfa,
             "ancho": ancho,
             "exceso_de_resina": exceso_de_resina,
             "corregir_angulo": corregir_angulo,
+            "pines": pines,
+            "coeficiente_rozamiento": coeficiente_rozamiento,
+            "espesor": espesor,
             "velocidad_de_alimentacion": velocidad_de_alimentacion
         }
         # Crear el archivo JSON automáticamente
@@ -91,7 +94,7 @@ class GeneradorPatrones:
             ptr = self.patrones[index][1]
             Dcco = self.patrones[index][4]
             orden = self.listas_de_patrones[index]
-            graficar_multiples_areas(lista, self.diccionario_capa["NP"], paso, index, orden, ptr, Dcco, self.diccionario_capa, guardar_grafico, graficar_solo_esquemas)
+            #graficar_multiples_areas(lista, self.diccionario_capa["NP"], paso, index, orden, ptr, Dcco, self.diccionario_capa, guardar_grafico, graficar_solo_esquemas)
 
     def seleccionar_patron(self, parametro=None):
         if parametro is None:
@@ -164,4 +167,115 @@ class GeneradorPatrones:
     def ejecutar(self, guardar_grafico, graficar_solo_esquemas):
         self.obtener_parametros_iniciales()
         self.generar_patrones()
-        self.graficar_patrones(guardar_grafico, graficar_solo_esquemas)
+        self.graficar_patrones(guardar_grafico, graficar_solo_esquemas)        
+    def sqlite3(self, usuario, nombre):
+        diccionario_capa=self.diccionario_capa
+        filename2=diccionario_capa["filename2"]
+        diametro_mandril=diccionario_capa["diametro_mandril"]
+        longitud_util=diccionario_capa["longitud_util"]
+        espesor=diccionario_capa["espesor"]
+        coeficiente_rozamiento=diccionario_capa["coeficiente_rozamiento"]
+        pines=diccionario_capa["pines"]
+        alfa=diccionario_capa["alfa"]
+        alfa_original=diccionario_capa["alfa_original"]
+        ancho=diccionario_capa["ancho"]
+        exceso_de_resina=diccionario_capa["exceso_de_resina"]
+        corregir_angulo=diccionario_capa["corregir_angulo"]
+        velocidad_de_alimentacion=diccionario_capa["velocidad_de_alimentacion"]
+        alfa_corregido=diccionario_capa["calculos_iniciales"][1]["alfa_corregido"]
+        ancho_eff=diccionario_capa["calculos_iniciales"][2]["ancho_eff"]
+        NP=diccionario_capa["calculos_iniciales"][4]["NP"]
+        patron_elegido=diccionario_capa["patron_elegido_Nº"]
+        orden_del_patron_elegido=diccionario_capa["orden_del_patron_elegido"]
+        PTR=diccionario_capa["PTR"]
+        Paso=diccionario_capa["Paso"]
+        Dcco=diccionario_capa["Dcco"]
+        puntos_codigo_g_centrados=diccionario_capa["puntos_codigo_g"]
+        # Conectar a la base de datos (la base de datos se creará si no existe) 
+        conn = sqlite3.connect('capas.db') 
+        # Crear un cursor 
+        cursor = conn.cursor()
+        cursor.execute(''' INSERT INTO capas (
+        usuario,
+        nombre,
+        filename2,
+        diametro_mandril,
+        longitud_util,
+        espesor,
+        coeficiente_rozamiento,
+        pines,
+        alfa_original,
+        ancho,
+        exceso_de_resina,
+        corregir_angulo,
+        velocidad_de_alimentacion,
+        alfa_corregido,
+        ancho_eff,
+        NP,
+        patron_elegido,
+        orden_del_patron_elegido,
+        PTR,
+        Paso,
+        Dcco,
+        puntos_codigo_g
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ''', (
+        usuario,
+        nombre,
+        filename2,
+        diametro_mandril,
+        longitud_util,
+        espesor,
+        coeficiente_rozamiento,
+        pines,
+        alfa_original,
+        ancho,
+        exceso_de_resina,
+        corregir_angulo,
+        velocidad_de_alimentacion,
+        alfa_corregido,
+        ancho_eff,
+        NP,
+        patron_elegido,
+        str(orden_del_patron_elegido),
+        PTR,
+        Paso,
+        Dcco,
+        str(puntos_codigo_g_centrados)
+        ))
+        conn.commit()
+        conn.close()
+        
+    def guardar_diccionario_capa_como_json(self, ruta_relativa, nombre_archivo): # Crear la ruta completa 
+        ruta_completa = os.path.join(ruta_relativa, nombre_archivo) 
+        # Crear el directorio si no existe 
+        os.makedirs(ruta_relativa, exist_ok=True) 
+        # Guardar el diccionario en el archivo JSON 
+        with open(ruta_completa, 'w') as f: 
+            json.dump(self.diccionario_capa, f) 
+        return ruta_completa
+
+        def to_dict(self):
+            return {
+                'usuario': self.usuario,
+                'nombre': self.nombre,
+                'filename2': self.diccionario_capa['filename2'],
+                'diametro_mandril': self.diccionario_capa['diametro_mandril'],
+                'longitud_util': self.diccionario_capa['longitud_util'],
+                'espesor': self.diccionario_capa['espesor'],
+                'coeficiente_rozamiento': self.diccionario_capa['coeficiente_rozamiento'],
+                'pines': self.diccionario_capa['pines'],
+                'alfa_original': self.diccionario_capa['alfa_original'],
+                'ancho': self.diccionario_capa['ancho'],
+                'exceso_de_resina': self.diccionario_capa['exceso_de_resina'],
+                'corregir_angulo': self.diccionario_capa['corregir_angulo'],
+                'velocidad_de_alimentacion': self.diccionario_capa['velocidad_de_alimentacion'],
+                'alfa_corregido': self.diccionario_capa.get('alfa_corregido', None),
+                'ancho_eff': self.diccionario_capa.get('ancho_eff', None),
+                'NP': self.diccionario_capa.get('NP', None),
+                'patron_elegido': self.diccionario_capa.get('patron_elegido_Nº', None),
+                'orden_del_patron_elegido': str(self.diccionario_capa.get('orden_del_patron_elegido', None)),
+                'PTR': self.diccionario_capa.get('PTR', None),
+                'Paso': self.diccionario_capa.get('Paso', None),
+                'Dcco': self.diccionario_capa.get('Dcco', None),
+                'puntos_codigo_g': str(self.diccionario_capa.get('puntos_codigo_g', None))
+            }
