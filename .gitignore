@@ -10,3 +10,11 @@ pruebas.html
 proxy_git.txt
 .db
 *.db
+venv/
+__pycache__/
+*.pyc
+
+*.log
+.DS_Store
+.vscode/
+test/

@@ -1,5 +1,5 @@
-python -m venv entorno_virtual
-source entorno_virtual/Scripts/activate
+python -m venv venv
+source venv/Scripts/activate
 pip install fastapi 
 pip install uvicorn 
 pip install matplotlib 
@@ -14,3 +14,7 @@ uvicorn app:app --reload
 
 #Antes de desplegar en vercel:
 pip freeze > requirements.txt
+
+Desactivar proxy temporalmente para instalar paquetes de pip:
+(venv) PS C:\Proyectos\FastAPI> reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f
+La operación se completó correctamente.
