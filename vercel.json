@@ -1,15 +1,18 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "run.py",
-      "use": "@vercel/python"
+    "version": 2,
+    "builds": [
+        {
+            "src": "run.py",
+            "use": "@vercel/python"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "/run.py"
+        }
+    ],
+    "env": {
+        "PYTHONPATH": "/var/task"
     }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "run.py"
-    }
-  ]
 }
