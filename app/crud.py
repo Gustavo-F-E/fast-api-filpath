@@ -1,7 +1,8 @@
+# app/crud.py - VERSIÓN CORREGIDA
 from typing import Optional
 from bson import ObjectId
 from datetime import datetime
-from .database import get_users_collection, get_projects_collection
+from .database import get_users_collection, get_projects_collection  # Estas son async ahora
 from .auth import get_password_hash, verify_password
 from .schemas import UserCreate, UserLogin, ProjectCreate, ProjectUpdate
 import logging
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 async def create_user(user: UserCreate):
     """Crear nuevo usuario"""
-    users_collection = get_users_collection()
+    users_collection = await get_users_collection()  # 🔴 AGREGAR AWAIT
 
     # Verificar si el usuario ya existe
     existing_user = await users_collection.find_one({
@@ -46,7 +47,7 @@ async def create_user(user: UserCreate):
 
 async def authenticate_user(email: str, password: str):
     """Autenticar usuario"""
-    users_collection = get_users_collection()
+    users_collection = await get_users_collection()  # 🔴 AGREGAR AWAIT
 
     user = await users_collection.find_one({"email": email})
 
@@ -65,7 +66,7 @@ async def authenticate_user(email: str, password: str):
 
 async def get_user_by_id(user_id: str):
     """Obtener usuario por ID"""
-    users_collection = get_users_collection()
+    users_collection = await get_users_collection()  # 🔴 AGREGAR AWAIT
 
     try:
         user = await users_collection.find_one({"_id": ObjectId(user_id)})
@@ -78,7 +79,7 @@ async def get_user_by_id(user_id: str):
 
 async def get_user_by_email(email: str):
     """Obtener usuario por email"""
-    users_collection = get_users_collection()
+    users_collection = await get_users_collection()  # 🔴 AGREGAR AWAIT
 
     user = await users_collection.find_one({"email": email})
     if user:
@@ -88,7 +89,7 @@ async def get_user_by_email(email: str):
 
 async def update_user(user_id: str, update_data: dict):
     """Actualizar usuario"""
-    users_collection = get_users_collection()
+    users_collection = await get_users_collection()  # 🔴 AGREGAR AWAIT
 
     update_data["updated_at"] = datetime.utcnow()
 
@@ -102,8 +103,8 @@ async def update_user(user_id: str, update_data: dict):
 
 async def delete_user(user_id: str):
     """Eliminar usuario y TODOS sus proyectos"""
-    users_collection = get_users_collection()
-    projects_collection = get_projects_collection()
+    users_collection = await get_users_collection()  # 🔴 AGREGAR AWAIT
+    projects_collection = await get_projects_collection()  # 🔴 AGREGAR AWAIT
 
     # Obtener usuario para saber su email
     user = await users_collection.find_one({"_id": ObjectId(user_id)})
@@ -132,7 +133,7 @@ async def delete_user(user_id: str):
 # ============================================================
 
 async def create_project(project: ProjectCreate, user_email: str):
-    projects_collection = get_projects_collection()
+    projects_collection = await get_projects_collection()  # 🔴 AGREGAR AWAIT
 
     project_dict = project.dict()
     project_dict["user_email"] = user_email
@@ -149,7 +150,7 @@ async def create_project(project: ProjectCreate, user_email: str):
 
 async def get_user_projects(user_email: str, skip: int = 0, limit: int = 100):
     """Obtener proyectos de un usuario por email"""
-    projects_collection = get_projects_collection()
+    projects_collection = await get_projects_collection()  # 🔴 AGREGAR AWAIT
 
     projects = await projects_collection.find(
         {"user_email": user_email}
@@ -163,7 +164,7 @@ async def get_user_projects(user_email: str, skip: int = 0, limit: int = 100):
 
 async def get_project_by_id(project_id: str):
     """Obtener proyecto por ID"""
-    projects_collection = get_projects_collection()
+    projects_collection = await get_projects_collection()  # 🔴 AGREGAR AWAIT
 
     try:
         project = await projects_collection.find_one({"_id": ObjectId(project_id)})
@@ -176,7 +177,7 @@ async def get_project_by_id(project_id: str):
 
 async def update_project(project_id: str, user_email: str, update_data: ProjectUpdate):
     """Actualizar proyecto"""
-    projects_collection = get_projects_collection()
+    projects_collection = await get_projects_collection()  # 🔴 AGREGAR AWAIT
 
     update_dict = update_data.dict(exclude_unset=True)
     update_dict["updated_at"] = datetime.utcnow()
@@ -191,7 +192,7 @@ async def update_project(project_id: str, user_email: str, update_data: ProjectU
 
 async def delete_project(project_id: str, user_email: str):
     """Eliminar proyecto"""
-    projects_collection = get_projects_collection()
+    projects_collection = await get_projects_collection()  # 🔴 AGREGAR AWAIT
 
     result = await projects_collection.delete_one(
         {"_id": ObjectId(project_id), "user_email": user_email}

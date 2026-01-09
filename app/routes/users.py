@@ -6,15 +6,17 @@ from bson import ObjectId
 from ..crud import get_user_by_id, update_user, delete_user
 from ..schemas import UserResponse, UserUpdate
 from .auth import get_current_user
+from ..database import get_users_collection  # Importar la función
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("/", response_model=List[UserResponse])
 async def read_users():
     """Obtener todos los usuarios (solo admin en producción)"""
-    # En producción, agregar verificación de rol admin
-    from ..database import get_users_collection
-    users_collection = get_users_collection()
+    # 🔴 CAMBIA ESTA LÍNEA:
+    # users_collection = get_users_collection()  # ❌ ANTES (sin await)
+    
+    users_collection = await get_users_collection()  # ✅ AHORA (con await)
     
     users = await users_collection.find().to_list(100)
     
@@ -44,7 +46,7 @@ async def update_user_data(
 ):
     """Actualizar usuario"""
     # Verificar que el usuario solo se pueda actualizar a sí mismo
-    if current_user["_id"] != user_id:
+    if current_user.id != user_id:  # 🔴 Cambia "_id" por "id"
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No puedes actualizar otros usuarios"
@@ -69,7 +71,7 @@ async def delete_user_data(
 ):
     """Eliminar usuario y TODOS sus proyectos"""
     # Verificar que el usuario solo se pueda eliminar a sí mismo
-    if current_user["_id"] != user_id:
+    if current_user.id != user_id:  # 🔴 Cambia "_id" por "id"
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No puedes eliminar otros usuarios"
