@@ -46,7 +46,9 @@ app = FastAPI(
     title="Filament Path Generator API",
     description="API para gestión de proyectos de impresión 3D",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/docs",  # Esto está bien
+    redoc_url="/redoc"  # Esto debería estar presente
 )
 
 # Configurar CORS para Vercel

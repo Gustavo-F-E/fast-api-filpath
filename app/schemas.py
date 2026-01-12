@@ -1,5 +1,5 @@
 # app/schemas.py
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from pydantic import GetJsonSchemaHandler
 from pydantic import AliasChoices
 from pydantic.json_schema import JsonSchemaValue
@@ -43,11 +43,33 @@ class UserCreate(UserBase):
     provider: str = "email"
     provider_id: Optional[str] = None
 
-
+'''
 class UserLogin(BaseModel):
-    email: EmailStr
+    # Cambiamos para aceptar email O username
+    email: Optional[str] = None
+    username: Optional[str] = None
     password: str
 
+    # Validación para asegurar que se proporcione email O username
+    @model_validator(mode='after')
+    def check_email_or_username(self):
+        if not self.email and not self.username:
+            raise ValueError('Debe proporcionar email o username')
+        return self'''
+
+class UserLogin(BaseModel):
+    email: Optional[str] = None
+    username: Optional[str] = None
+    password: str
+
+    @model_validator(mode='after')
+    def check_email_or_username(self):
+        email = getattr(self, 'email', None)
+        username = getattr(self, 'username', None)
+        
+        if not email and not username:
+            raise ValueError('Debe proporcionar email o username')
+        return self
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     username: Optional[str] = None

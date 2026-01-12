@@ -10,38 +10,6 @@ from ..schemas import UserCreate, UserLogin, Token, UserResponse
 router = APIRouter()
 
 # ============================
-# LOGIN (JSON)
-# ============================
-@router.post("/auth/login", response_model=Token)
-async def login(data: UserLogin):
-    """Iniciar sesión con JSON"""
-    user = await authenticate_user(data.email, data.password)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas"
-        )
-
-    access_token_expires = timedelta(minutes=30)
-    access_token = create_access_token(
-        data={"sub": user["email"]},
-        expires_delta=access_token_expires
-    )
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user["_id"],
-            "email": user["email"],
-            "username": user["username"],
-            "provider": user.get("provider", "local"),
-            "created_at": user["created_at"]
-        }
-    }
-
-# ============================
 # OBTENER USUARIO ACTUAL (MODIFICADA PARA ASYNC)
 # ============================
 async def get_current_user(authorization: str = Header(None)):
@@ -80,6 +48,55 @@ async def get_current_user(authorization: str = Header(None)):
         provider=user.get("provider", "local"),
         created_at=user["created_at"]
     )
+
+
+# ============================
+# LOGIN (JSON)
+# ============================
+@router.post("/auth/login", response_model=Token)
+async def login(data: UserLogin):
+    """Iniciar sesión con email O username"""
+    # Validación manual
+    if not data.email and not data.username:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debe proporcionar email o username"
+        )
+    
+    # Determinar qué campo usar
+    login_input = data.email if data.email else data.username
+    
+    user = await authenticate_user(login_input, data.password)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales inválidas"
+        )
+
+    access_token_expires = timedelta(minutes=30)
+    access_token = create_access_token(
+        data={"sub": user["email"]},  # Siempre usar email para el token
+        expires_delta=access_token_expires
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user["_id"],
+            "email": user["email"],
+            "username": user["username"],
+            "provider": user.get("provider", "local"),
+            "created_at": user["created_at"]
+        }
+    }
+
+@router.get("/auth/session")
+async def get_session(current_user: dict = Depends(get_current_user)):
+    """Obtener información de la sesión actual"""
+    return current_user
+
 
 # ============================
 # REGISTRO

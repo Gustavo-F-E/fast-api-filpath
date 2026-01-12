@@ -18,3 +18,13 @@ pip freeze > requirements.txt
 Desactivar proxy temporalmente para instalar paquetes de pip:
 (venv) PS C:\Proyectos\FastAPI> reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f
 La operación se completó correctamente.
+
+
+source venv/Scripts/activate
+uvicorn app.main:app --reload --port 8000
+
+http://localhost:8000/docs - Documentación Swagger UI interactiva
+
+http://localhost:8000/redoc - Documentación ReDoc alternativa
+
+http://localhost:8000/openapi.json - Documentación JSON

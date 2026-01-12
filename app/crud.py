@@ -45,11 +45,17 @@ async def create_user(user: UserCreate):
     return created_user
 
 
-async def authenticate_user(email: str, password: str):
-    """Autenticar usuario"""
-    users_collection = await get_users_collection()  # 🔴 AGREGAR AWAIT
+async def authenticate_user(login_input: str, password: str):
+    """Autenticar usuario por email O username"""
+    users_collection = await get_users_collection()
 
-    user = await users_collection.find_one({"email": email})
+    # Determinar si es email o username
+    is_email = "@" in login_input
+    
+    if is_email:
+        user = await users_collection.find_one({"email": login_input})
+    else:
+        user = await users_collection.find_one({"username": login_input})
 
     if not user:
         return None
@@ -62,7 +68,6 @@ async def authenticate_user(email: str, password: str):
 
     user["_id"] = str(user["_id"])
     return user
-
 
 async def get_user_by_id(user_id: str):
     """Obtener usuario por ID"""
