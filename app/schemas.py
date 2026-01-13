@@ -39,7 +39,7 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str
+    password: Optional[str] = None
     provider: str = "email"
     provider_id: Optional[str] = None
 
@@ -149,3 +149,9 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+
+class OAuthLogin(BaseModel):
+    email: EmailStr
+    username: str
+    provider: str
+    provider_id: str

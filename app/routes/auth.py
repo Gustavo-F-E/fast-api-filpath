@@ -4,8 +4,8 @@ from datetime import timedelta, datetime
 from typing import Dict
 
 from ..auth import create_access_token, verify_token, blacklist_token, blacklist_all_user_tokens
-from ..crud import authenticate_user, create_user, get_user_by_email
-from ..schemas import UserCreate, UserLogin, Token, UserResponse
+from ..crud import authenticate_user, create_user, get_user_by_email, get_user_by_provider, create_oauth_user
+from ..schemas import UserCreate, UserLogin, Token, UserResponse, OAuthLogin
 
 router = APIRouter()
 
@@ -185,4 +185,41 @@ async def logout_all(
         "user_email": current_user.email,
         "logout_time": datetime.utcnow().isoformat(),
         "note": "Tokens serán invalidados progresivamente"
+    }
+
+@router.post("/auth/oauth", response_model=Token)
+async def oauth_login(data: OAuthLogin):
+    """
+    Login o registro usando OAuth (Google, Microsoft, Apple, etc)
+    """
+
+    # 1. Buscar por provider + provider_id
+    user = await get_user_by_provider(data.provider, data.provider_id)
+
+    # 2. Si no existe → crear usuario
+    if not user:
+        try:
+            user = await create_oauth_user(data.dict())
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e)
+            )
+
+    # 3. Generar JWT exactamente igual que siempre
+    access_token = create_access_token(
+        data={"sub": user["email"]},
+        expires_delta=timedelta(minutes=30)
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user["_id"],
+            "email": user["email"],
+            "username": user["username"],
+            "provider": user["provider"],
+            "created_at": user["created_at"]
+        }
     }

@@ -204,3 +204,36 @@ async def delete_project(project_id: str, user_email: str):
     )
 
     return result.deleted_count > 0
+
+async def get_user_by_provider(provider: str, provider_id: str):
+    users_collection = await get_users_collection()
+    user = await users_collection.find_one({
+        "provider": provider,
+        "provider_id": provider_id
+    })
+    if user:
+        user["_id"] = str(user["_id"])
+    return user
+
+async def create_oauth_user(data: dict):
+    users_collection = await get_users_collection()
+
+    # Si existe por email pero es otro provider → error
+    existing_email = await users_collection.find_one({"email": data["email"]})
+    if existing_email:
+        raise ValueError("Email ya registrado con otro método")
+
+    user_dict = {
+        "email": data["email"],
+        "username": data["username"],
+        "provider": data["provider"],
+        "provider_id": data["provider_id"],
+        "password_hash": None,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow(),
+    }
+
+    result = await users_collection.insert_one(user_dict)
+    user = await users_collection.find_one({"_id": result.inserted_id})
+    user["_id"] = str(user["_id"])
+    return user
