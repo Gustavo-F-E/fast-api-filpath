@@ -3,17 +3,19 @@
 ## 🎯 Descripción General
 
 Este es un proyecto **FastAPI** para la generación y gestión de trayectorias de bobinado de filamento para impresoras 3D. La aplicación incluye:
-- **Backend**: API REST con FastAPI y MongoDB
-- **Autenticación**: Sistema de usuarios y proyectos
-- **Visualización**: Generación de gráficos y descargas de archivos
-- **Despliegue**: Configurado para Vercel
+
+-   **Backend**: API REST con FastAPI y MongoDB
+-   **Autenticación**: Sistema de usuarios y proyectos
+-   **Visualización**: Generación de gráficos y descargas de archivos
+-   **Despliegue**: Configurado para Vercel
 
 **Stack Tecnológico:**
-- FastAPI 0.115.2
-- MongoDB (Motor para async)
-- Pydantic v2
-- Matplotlib para gráficos
-- Python 3.10+
+
+-   FastAPI 0.115.2
+-   MongoDB (Motor para async)
+-   Pydantic v2
+-   Matplotlib para gráficos
+-   Python 3.10+
 
 ---
 
@@ -35,16 +37,18 @@ c:\Proyectos\FastAPI\
 ```
 
 **Descripción de archivos principales:**
-- **app.py**: API FastAPI simple para generar/descargar gráficos de trayectorias 3D
-- **run.py**: Punto de entrada para el despliegue (importa del módulo app/)
-- **requirements.txt**: 38 dependencias (FastAPI, MongoDB, Matplotlib, etc.)
-- **vercel.json**: Configuración de deployment con Vercel (Python runtime)
+
+-   **app.py**: API FastAPI simple para generar/descargar gráficos de trayectorias 3D
+-   **run.py**: Punto de entrada para el despliegue (importa del módulo app/)
+-   **requirements.txt**: 38 dependencias (FastAPI, MongoDB, Matplotlib, etc.)
+-   **vercel.json**: Configuración de deployment con Vercel (Python runtime)
 
 ---
 
 ## 📂 Directorio `/app` (Núcleo de la API)
 
 ### Estructura:
+
 ```
 app/
 ├── __init__.py                         # Inicializador del paquete
@@ -65,20 +69,23 @@ app/
 ### 📋 Descripciones de módulos:
 
 #### **main.py** - Aplicación FastAPI
-- **Configuración de CORS**: Permite solicitudes desde localhost:3000, localhost:5500 y Vercel
-- **Lifespan handler**: Gestiona inicialización y cierre de la aplicación
-- **Inicialización de BD**: Conecta a MongoDB Atlas al iniciar
-- **Documentación**: Swagger UI en `/docs`
-- **Rutas registradas**: Auth, usuarios y proyectos
+
+-   **Configuración de CORS**: Permite solicitudes desde localhost:3000, localhost:5500 y Vercel
+-   **Lifespan handler**: Gestiona inicialización y cierre de la aplicación
+-   **Inicialización de BD**: Conecta a MongoDB Atlas al iniciar
+-   **Documentación**: Swagger UI en `/docs`
+-   **Rutas registradas**: Auth, usuarios y proyectos
 
 #### **database.py** - Conexión MongoDB
-- **Motor AsyncIO**: Cliente asincrónico para MongoDB
-- **Método `connect_to_mongo()`**: Conexión a MongoDB Atlas
-- **Manejo de errores**: Logs detallados de conexión
-- **Índices automáticos**: Creación de índices en colecciones
-- **Variables de entorno**: MONGODB_URI y DATABASE_NAME
+
+-   **Motor AsyncIO**: Cliente asincrónico para MongoDB
+-   **Método `connect_to_mongo()`**: Conexión a MongoDB Atlas
+-   **Manejo de errores**: Logs detallados de conexión
+-   **Índices automáticos**: Creación de índices en colecciones
+-   **Variables de entorno**: MONGODB_URI y DATABASE_NAME
 
 #### **schemas.py** - Validación de datos
+
 ```python
 - PyObjectId         # Conversión de IDs de MongoDB para Pydantic v2
 - UserBase           # Base para usuarios (email, username)
@@ -88,18 +95,21 @@ app/
 ```
 
 #### **auth.py** - Autenticación
-- Manejo de contraseñas con bcrypt
-- Generación de tokens JWT
-- Soporte multi-proveedor (email, OAuth)
+
+-   Manejo de contraseñas con bcrypt
+-   Generación de tokens JWT
+-   Soporte multi-proveedor (email, OAuth)
 
 #### **crud.py** - Operaciones de BD
-- Crear/Leer/Actualizar/Eliminar usuarios y proyectos
-- Manejo de errores y validaciones
+
+-   Crear/Leer/Actualizar/Eliminar usuarios y proyectos
+-   Manejo de errores y validaciones
 
 #### **routes/**
-- **auth.py**: Endpoints de login, registro, logout
-- **users.py**: Endpoints para gestión de perfiles
-- **projects.py**: Endpoints para CRUD de proyectos
+
+-   **auth.py**: Endpoints de login, registro, logout
+-   **users.py**: Endpoints para gestión de perfiles
+-   **projects.py**: Endpoints para CRUD de proyectos
 
 ---
 
@@ -158,16 +168,19 @@ imagenes_notebook/                      # Gráficos de Notebooks
 ## 🔧 Flujo de la Aplicación
 
 ### Punto de entrada en Vercel:
+
 ```
 vercel.json → run.py → app/main.py
 ```
 
 ### Punto de entrada local:
+
 ```
 run.py o app.py → uvicorn
 ```
 
 ### Inicialización:
+
 1. **Lifespan**: Ejecuta `initialize_database()`
 2. **Conexión MongoDB**: Conecta a Atlas con MONGODB_URI
 3. **Creación de índices**: Establece índices en colecciones
@@ -179,50 +192,53 @@ run.py o app.py → uvicorn
 ## 🔌 Endpoints Principales
 
 ### De app.py (generador de gráficos):
-- `GET /` → "Hola Mundo"
-- `POST /generate-plot/` → Genera gráfico 3D
-- `GET /download-plot/` → Descarga gráfico
-- `POST /generate-and-download-plot/` → Genera y descarga
+
+-   `GET /` → "Hola Mundo"
+-   `POST /generate-plot/` → Genera gráfico 3D
+-   `GET /download-plot/` → Descarga gráfico
+-   `POST /generate-and-download-plot/` → Genera y descarga
 
 ### De app/main.py (API principal):
-- `/docs` → Swagger UI
-- `/auth/*` → Autenticación
-- `/users/*` → Gestión de usuarios
-- `/projects/*` → Gestión de proyectos
+
+-   `/docs` → Swagger UI
+-   `/auth/*` → Autenticación
+-   `/users/*` → Gestión de usuarios
+-   `/projects/*` → Gestión de proyectos
 
 ---
 
 ## 🗂️ Archivos de Configuración
 
-| Archivo | Propósito |
-|---------|-----------|
-| `requirements.txt` | Dependencias pip (38 paquetes) |
-| `vercel.json` | Configuración de despliegue Vercel |
+| Archivo                | Propósito                                |
+| ---------------------- | ---------------------------------------- |
+| `requirements.txt`     | Dependencias pip (38 paquetes)           |
+| `vercel.json`          | Configuración de despliegue Vercel       |
 | `.env` (no versionado) | Variables de entorno (MONGODB_URI, etc.) |
-| `comandos.txt` | Comandos útiles para desarrollo |
+| `comandos.txt`         | Comandos útiles para desarrollo          |
 
 ---
 
 ## 📊 Dependencias Principales
 
-| Paquete | Versión | Propósito |
-|---------|---------|----------|
-| fastapi | 0.115.2 | Framework web |
-| uvicorn | 0.32.0 | Servidor ASGI |
-| motor | 3.7.1 | Cliente MongoDB async |
-| pymongo | 4.16.0 | Driver MongoDB |
-| pydantic | 2.9.2 | Validación de datos |
-| bcrypt | 4.0.1 | Hash de contraseñas |
-| python-jose | 3.5.0 | Tokens JWT |
-| matplotlib | 3.9.2 | Generación de gráficos |
-| python-dotenv | 1.2.1 | Variables de entorno |
-| cryptography | 46.0.3 | Encriptación |
+| Paquete       | Versión | Propósito              |
+| ------------- | ------- | ---------------------- |
+| fastapi       | 0.115.2 | Framework web          |
+| uvicorn       | 0.32.0  | Servidor ASGI          |
+| motor         | 3.7.1   | Cliente MongoDB async  |
+| pymongo       | 4.16.0  | Driver MongoDB         |
+| pydantic      | 2.9.2   | Validación de datos    |
+| bcrypt        | 4.0.1   | Hash de contraseñas    |
+| python-jose   | 3.5.0   | Tokens JWT             |
+| matplotlib    | 3.9.2   | Generación de gráficos |
+| python-dotenv | 1.2.1   | Variables de entorno   |
+| cryptography  | 46.0.3  | Encriptación           |
 
 ---
 
 ## 🚀 Cómo Ejecutar
 
 ### Local:
+
 ```bash
 # Instalar dependencias
 pip install -r requirements.txt
@@ -235,6 +251,7 @@ python run.py
 ```
 
 ### Variables de entorno necesarias:
+
 ```
 MONGODB_URI=mongodb+srv://usuario:contraseña@cluster.mongodb.net/
 DATABASE_NAME=fil-wind
@@ -242,6 +259,7 @@ JWT_SECRET_KEY=tu-clave-secreta
 ```
 
 ### Despliegue en Vercel:
+
 ```bash
 vercel deploy
 ```
@@ -250,24 +268,24 @@ vercel deploy
 
 ## 📈 Resumen Estadístico
 
-| Métrica | Cantidad |
-|---------|----------|
-| **Archivos Python** | ~30+ |
-| **Módulos principales** | 6 (database, auth, crud, schemas, routes) |
-| **Rutas implementadas** | 3 grupos (auth, users, projects) |
-| **Dependencias** | 38 paquetes |
-| **Notebooks Jupyter** | 3 (ejemplos, pruebas) |
-| **Directorio de desarrollo** | uso_en_local/ (~50 archivos) |
+| Métrica                      | Cantidad                                  |
+| ---------------------------- | ----------------------------------------- |
+| **Archivos Python**          | ~30+                                      |
+| **Módulos principales**      | 6 (database, auth, crud, schemas, routes) |
+| **Rutas implementadas**      | 3 grupos (auth, users, projects)          |
+| **Dependencias**             | 38 paquetes                               |
+| **Notebooks Jupyter**        | 3 (ejemplos, pruebas)                     |
+| **Directorio de desarrollo** | uso_en_local/ (~50 archivos)              |
 
 ---
 
 ## 🎓 Notas
 
-- El proyecto usa **async/await** en toda la aplicación
-- MongoDB es la base de datos principal
-- CORS está configurado para desarrollo y producción (Vercel)
-- Los logs se escriben con el nivel INFO
-- El proyecto sigue la estructura modular de FastAPI (routes, schemas, crud)
-- Hay mucho código experimental en `uso_en_local/` que no se usa en producción
+-   El proyecto usa **async/await** en toda la aplicación
+-   MongoDB es la base de datos principal
+-   CORS está configurado para desarrollo y producción (Vercel)
+-   Los logs se escriben con el nivel INFO
+-   El proyecto sigue la estructura modular de FastAPI (routes, schemas, crud)
+-   Hay mucho código experimental en `uso_en_local/` que no se usa en producción
 
 ---
