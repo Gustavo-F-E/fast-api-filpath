@@ -29,6 +29,7 @@ c:\Proyectos\FastAPI\
 ├── run.py                              # Punto de entrada principal (se usa para Vercel)
 ├── requirements.txt                    # Dependencias del proyecto
 ├── vercel.json                         # Configuración para despliegue en Vercel
+├── .env.example                        # Ejemplo de variables de entorno
 ├── README.md                           # Documentación (con ejemplos)
 ├── comandos.txt                        # Notas con comandos útiles
 ├── generate_plot.py                    # Generador de gráficos
@@ -146,15 +147,7 @@ uso_en_local/
 
 ---
 
-## 📂 Directorio `/test`
 
-```
-test/
-├── test_logout.py                      # Tests de logout
-├── test.rest                           # Archivo REST para pruebas (formato VSCode)
-```
-
----
 
 ## 📂 Directorios `/imagenes` e `/imagenes_notebook`
 
@@ -274,7 +267,7 @@ vercel deploy
 | **Módulos principales**      | 6 (database, auth, crud, schemas, routes) |
 | **Rutas implementadas**      | 3 grupos (auth, users, projects)          |
 | **Dependencias**             | 38 paquetes                               |
-| **Notebooks Jupyter**        | 3 (ejemplos, pruebas)                     |
+| **Notebooks Jupyter**        | 5 (ejemplos, pruebas)                     |
 | **Directorio de desarrollo** | uso_en_local/ (~50 archivos)              |
 
 ---

@@ -19,8 +19,9 @@ Desactivar proxy temporalmente para instalar paquetes de pip:
 (venv) PS C:\Proyectos\FastAPI> reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f
 La operación se completó correctamente.
 
-
+python -m venv venv
 source venv/Scripts/activate
+pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 
 http://localhost:8000/docs - Documentación Swagger UI interactiva

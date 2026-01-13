@@ -7,61 +7,28 @@ from datetime import datetime
 import os
 
 from .database import Database, initialize_database
-from .routes import auth, users, projects
-
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from .routes import auth, users, projects, social
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Manejar ciclo de vida de la aplicación"""
-    # Al iniciar
-    logger.info("🚀 Iniciando aplicación FastAPI...")
-    
+    # Inicializar recursos al iniciar la aplicación
+    await initialize_database()
     try:
-        # Usar la función mejorada de inicialización
-        success = await initialize_database()
-        if success:
-            logger.info("✅ Base de datos inicializada correctamente")
-        else:
-            logger.warning("⚠️ Base de datos no disponible, algunas funciones no funcionarán")
-    except Exception as e:
-        logger.error(f"❌ Error durante la inicialización: {e}")
-        # No levantamos la excepción para que la app pueda iniciar
-    
-    yield  # ← La aplicación corre aquí
-    
-    # Al cerrar
-    logger.info("🛑 Cerrando aplicación...")
-    
-    try:
-        await Database.close_mongo_connection()
-        logger.info("✅ Conexiones cerradas correctamente")
-    except Exception as e:
-        logger.error(f"❌ Error cerrando conexiones: {e}")
+        yield
+    finally:
+        # Cerrar conexiones al apagar
+        try:
+            await Database.close_mongo_connection()
+        except Exception:
+            pass
 
-# Crear aplicación FastAPI
-app = FastAPI(
-    title="Filament Path Generator API",
-    description="API para gestión de proyectos de impresión 3D",
-    version="1.0.0",
-    lifespan=lifespan,
-    docs_url="/docs",  # Esto está bien
-    redoc_url="/redoc"  # Esto debería estar presente
-)
+# Crear instancia de FastAPI con manejador de lifespan
+app = FastAPI(title="Filament Path Generator API", version="1.0.0", lifespan=lifespan)
 
-# Configurar CORS para Vercel
-# 🔴 IMPORTANTE: Quita la barra final de la URL
-origins = [
-    "https://pw-app-filament-winding.vercel.app",  # Sin barra final
-    "http://localhost:3000",
-    "http://localhost:8000",  # Para Swagger local
-]
-
+# Configuración CORS básica
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,6 +38,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(projects.router)
+app.include_router(social.router)
 
 # ==================== RUTAS BÁSICAS ====================
 

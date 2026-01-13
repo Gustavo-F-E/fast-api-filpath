@@ -218,10 +218,17 @@ async def get_user_by_provider(provider: str, provider_id: str):
 async def create_oauth_user(data: dict):
     users_collection = await get_users_collection()
 
-    # Si existe por email pero es otro provider → error
-    existing_email = await users_collection.find_one({"email": data["email"]})
-    if existing_email:
-        raise ValueError("Email ya registrado con otro método")
+    # Si existe por email
+    existing_user = await users_collection.find_one({"email": data["email"]})
+    if existing_user:
+        # En este MVP, si el email coincide, permitimos el login/registro
+        # Podríamos actualizar el registro para agregar el provider si no lo tiene
+        if "provider" not in existing_user or existing_user["provider"] != data["provider"]:
+             # Opcional: Actualizar el usuario para reflejar que también usa este provider
+             pass
+        
+        existing_user["_id"] = str(existing_user["_id"])
+        return existing_user
 
     user_dict = {
         "email": data["email"],
