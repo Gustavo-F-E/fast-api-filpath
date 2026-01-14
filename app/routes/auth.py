@@ -9,8 +9,11 @@ from ..schemas import UserCreate, UserLogin, Token, UserResponse, OAuthLogin
 
 router = APIRouter()
 
+# Guarda temporalmente los authorization codes ya usados
+used_oauth_codes: set[str] = set()
+
 # ============================
-# OBTENER USUARIO ACTUAL (MODIFICADA PARA ASYNC)
+# OBTENER USUARIO ACTUAL
 # ============================
 async def get_current_user(authorization: str = Header(None)):
     """Obtener usuario actual desde el header Authorization: Bearer <token>"""
@@ -23,7 +26,9 @@ async def get_current_user(authorization: str = Header(None)):
         )
 
     token = authorization.split(" ")[1]
-    email = await verify_token(token)  # 🔴 Ahora es async!
+
+    # 1. Verificamos token y obtenemos email
+    email = await verify_token(token)
 
     if email is None:
         raise HTTPException(
@@ -32,6 +37,7 @@ async def get_current_user(authorization: str = Header(None)):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # 2. Buscamos usuario real en Mongo
     user = await get_user_by_email(email)
 
     if user is None:
@@ -41,6 +47,7 @@ async def get_current_user(authorization: str = Header(None)):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # 3. Convertimos dict → UserResponse
     return UserResponse(
         id=str(user["_id"]),
         email=user["email"],
@@ -56,8 +63,13 @@ async def get_current_user(authorization: str = Header(None)):
 @router.post("/auth/login", response_model=Token)
 async def login(data: UserLogin):
     """Iniciar sesión con email O username"""
+    # Determinar qué campo usar para log
+    login_identifier = data.email if data.email else data.username
+    print(f"🔵 [BACKEND] Intento de login estándar recibido: {login_identifier}")
+
     # Validación manual
     if not data.email and not data.username:
+        print(f"🔴 [BACKEND] Login fallido: Faltan credenciales")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Debe proporcionar email o username"
@@ -69,10 +81,13 @@ async def login(data: UserLogin):
     user = await authenticate_user(login_input, data.password)
 
     if not user:
+        print(f"🔴 [BACKEND] Login fallido: Credenciales inválidas para {login_input}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales inválidas"
         )
+
+    print(f"🟢 [BACKEND] Login exitoso para usuario ID: {user['_id']}")
 
     access_token_expires = timedelta(minutes=30)
     access_token = create_access_token(
@@ -104,8 +119,10 @@ async def get_session(current_user: dict = Depends(get_current_user)):
 @router.post("/auth/register", response_model=UserResponse)
 async def register(user: UserCreate):
     """Registrar nuevo usuario"""
+    print(f"🔵 [BACKEND] Intento de registro estándar: {user.email} / {user.username}")
     try:
         created_user = await create_user(user)
+        print(f"🟢 [BACKEND] Registro exitoso para: {created_user['email']}")
 
         return {
             "id": created_user["_id"],
@@ -116,6 +133,13 @@ async def register(user: UserCreate):
         }
 
     except ValueError as e:
+        print(f"🔴 [BACKEND] Error validación registro: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        print(f"🔴 [BACKEND] Error interno en registro: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
@@ -132,6 +156,7 @@ async def register(user: UserCreate):
 @router.get("/auth/me", response_model=UserResponse)
 async def read_users_me(current_user: dict = Depends(get_current_user)):
     """Obtener información del usuario actual"""
+    print("🔍 Authorization header:", request.headers.get("authorization"))
     return current_user
 
 # ============================
@@ -193,6 +218,18 @@ async def oauth_login(data: OAuthLogin):
     Login o registro usando OAuth (Google, Microsoft, Apple, etc)
     """
 
+    # 🔐 Protección contra reuso de code OAuth
+    if data.code in used_oauth_codes:
+        print(f"🟠 [BACKEND] Code OAuth ya usado, bloqueando: {data.code}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Authorization code already used"
+        )
+
+    # Marcamos el code como usado
+    used_oauth_codes.add(data.code)
+    print(f"🔵 [BACKEND] Code OAuth registrado como usado: {data.code}")
+
     # 1. Buscar por provider + provider_id
     user = await get_user_by_provider(data.provider, data.provider_id)
 
@@ -212,6 +249,8 @@ async def oauth_login(data: OAuthLogin):
         expires_delta=timedelta(minutes=30)
     )
 
+    print(f"🟢 [BACKEND] OAuth login exitoso para {user['email']} ({data.provider})")
+
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -223,3 +262,4 @@ async def oauth_login(data: OAuthLogin):
             "created_at": user["created_at"]
         }
     }
+

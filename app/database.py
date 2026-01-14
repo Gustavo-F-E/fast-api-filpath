@@ -8,6 +8,18 @@ import logging
 
 load_dotenv()
 
+import logging
+import dns.resolver
+
+load_dotenv()
+
+# Configurar DNS resolver explícitamente para evitar timeouts con algunos proveedores de internet/VPN
+try:
+    dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
+    dns.resolver.default_resolver.nameservers = ['8.8.8.8', '8.8.4.4']
+except Exception as e:
+    print(f"No se pudo configurar DNS personalizado: {e}")
+
 logger = logging.getLogger(__name__)
 
 class Database:
@@ -51,7 +63,7 @@ class Database:
     @classmethod
     async def close_mongo_connection(cls):
         """Cerrar conexión a MongoDB"""
-        if cls.client:
+        if cls.client is not None:
             cls.client.close()
             logger.info("🔒 Conexión a MongoDB cerrada")
             cls.client = None
@@ -61,7 +73,7 @@ class Database:
     async def create_indexes(cls):
         """Crear índices necesarios"""
         try:
-            if not cls.database:
+            if cls.database is None:
                 logger.warning("⚠️ No hay conexión a DB para crear índices")
                 return
             
@@ -167,9 +179,3 @@ async def initialize_database():
         logger.error(f"❌ Error verificando colecciones: {e}")
     
     return True
-
-# Para compatibilidad con el código existente
-# (manteniendo tus funciones originales como propiedades)
-if Database.database:
-    get_users_collection = Database.database.usuarios
-    get_projects_collection = Database.database.proyectos
