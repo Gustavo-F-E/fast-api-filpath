@@ -27,21 +27,24 @@ async def get_social_auth_url(provider: str):
     
     if provider == "google":
         client_id = os.getenv("GOOGLE_CLIENT_ID")
-        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:3000/auth/callback/google")
+        frontend_url = os.getenv("URL_FRONTEND", "http://localhost:3000")
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", f"{frontend_url}/auth/callback/google")
         scope = "openid email profile"
         print(f"🔵 [BACKEND] Google Client ID: {client_id}")
         return {
             "url": f"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&access_type=offline"
         }
     elif provider == "facebook":
+        frontend_url = os.getenv("URL_FRONTEND", "http://localhost:3000")
         client_id = os.getenv("FACEBOOK_CLIENT_ID")
-        redirect_uri = os.getenv("FACEBOOK_REDIRECT_URI", "http://localhost:3000/auth/callback/facebook")
+        redirect_uri = os.getenv("FACEBOOK_REDIRECT_URI", f"{frontend_url}/auth/callback/facebook")
         return {
             "url": f"https://www.facebook.com/v19.0/dialog/oauth?client_id={client_id}&redirect_uri={redirect_uri}&scope=email,public_profile"
         }
     elif provider == "microsoft":
+        frontend_url = os.getenv("URL_FRONTEND", "http://localhost:3000")
         client_id = os.getenv("MICROSOFT_CLIENT_ID")
-        redirect_uri = os.getenv("MICROSOFT_REDIRECT_URI", "http://localhost:3000/auth/callback/microsoft")
+        redirect_uri = os.getenv("MICROSOFT_REDIRECT_URI", f"{frontend_url}/auth/callback/microsoft")
         scope = "User.Read email openid profile"
         return {
             "url": f"https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id={client_id}&response_type=code&redirect_uri={redirect_uri}&response_mode=query&scope={scope}"

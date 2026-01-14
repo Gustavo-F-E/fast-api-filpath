@@ -26,9 +26,16 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Filament Path Generator API", version="1.0.0", lifespan=lifespan)
 
 # Configuración CORS básica
+# Configuración CORS básica
+origins = [
+    "http://localhost:3000", 
+    "http://127.0.0.1:3000",
+    os.getenv("URL_FRONTEND")
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[origin for origin in origins if origin],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
