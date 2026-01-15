@@ -158,3 +158,77 @@ async def get_microsoft_user(code: str, redirect_uri: str):
             "provider_id": user_info.get("id"),
             "picture": None # Microsoft Graph requiere otra llamada para la foto
         }
+
+async def get_github_user(code: str, redirect_uri: str):
+    """
+    Intercambia el code por un token y obtiene la info del usuario de GitHub.
+    """
+    token_url = "https://github.com/login/oauth/access_token"
+    client_id = os.getenv("GITHUB_CLIENT_ID")
+    client_secret = os.getenv("GITHUB_CLIENT_SECRET")
+
+    if not client_id or not client_secret:
+        raise SocialAuthError("Falta configuración de GitHub")
+
+    params = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "redirect_uri": redirect_uri,
+    }
+
+    async with httpx.AsyncClient() as client:
+        # 1. Obtener Token
+        response = await client.post(
+            token_url, 
+            params=params, 
+            headers={"Accept": "application/json"}
+        )
+        if response.status_code != 200:
+            raise SocialAuthError(f"Error obteniendo token de GitHub: {response.text}")
+
+        token_data = response.json()
+        access_token = token_data.get("access_token")
+        
+        if not access_token:
+            raise SocialAuthError(f"GitHub no devolvió access_token: {token_data}")
+
+        # 2. Obtener Info Usuario
+        user_response = await client.get(
+            "https://api.github.com/user",
+            headers={
+                "Authorization": f"token {access_token}",
+                "Accept": "application/json"
+            }
+        )
+        
+        if user_response.status_code != 200:
+            raise SocialAuthError(f"Error obteniendo perfil de GitHub: {user_response.text}")
+
+        user_info = user_response.json()
+        
+        # 3. Obtener Email (GitHub requiere llamada aparte si es privado)
+        email = user_info.get("email")
+        if not email:
+            emails_response = await client.get(
+                "https://api.github.com/user/emails",
+                headers={
+                    "Authorization": f"token {access_token}",
+                    "Accept": "application/json"
+                }
+            )
+            if emails_response.status_code == 200:
+                emails = emails_response.json()
+                primary_email = next((e["email"] for e in emails if e["primary"]), None)
+                email = primary_email or (emails[0]["email"] if emails else None)
+
+        if not email:
+            raise SocialAuthError("GitHub no proporcionó un email verificado.")
+
+        return {
+            "email": email,
+            "username": user_info.get("login"),
+            "provider": "github",
+            "provider_id": str(user_info.get("id")),
+            "picture": user_info.get("avatar_url")
+        }

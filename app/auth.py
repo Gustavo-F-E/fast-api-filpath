@@ -15,8 +15,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-print("🔑 SECRET_KEY cargada:", SECRET_KEY)
-print("🔐 ALGORITHM:", ALGORITHM)
+#print("🔑 SECRET_KEY cargada:", SECRET_KEY)
+#print("🔐 ALGORITHM:", ALGORITHM)
 
 # ==================== FUNCIONES DE CONTRASEÑA ====================
 

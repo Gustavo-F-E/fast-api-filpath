@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from datetime import timedelta
 import os
 
-from ..social_auth import get_google_user, get_facebook_user, get_microsoft_user, SocialAuthError
+from ..social_auth import get_google_user, get_github_user, get_microsoft_user, SocialAuthError
 from ..crud import get_user_by_email, create_oauth_user, update_user
 from ..auth import create_access_token
 from ..schemas import Token
@@ -34,12 +34,12 @@ async def get_social_auth_url(provider: str):
         return {
             "url": f"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&access_type=offline"
         }
-    elif provider == "facebook":
+    elif provider == "github":
         frontend_url = os.getenv("URL_FRONTEND", "http://localhost:3000")
-        client_id = os.getenv("FACEBOOK_CLIENT_ID")
-        redirect_uri = os.getenv("FACEBOOK_REDIRECT_URI", f"{frontend_url}/auth/callback/facebook")
+        client_id = os.getenv("GITHUB_CLIENT_ID")
+        redirect_uri = os.getenv("GITHUB_REDIRECT_URI", f"{frontend_url}/auth/callback/github")
         return {
-            "url": f"https://www.facebook.com/v19.0/dialog/oauth?client_id={client_id}&redirect_uri={redirect_uri}&scope=email,public_profile"
+            "url": f"https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=user:email"
         }
     elif provider == "microsoft":
         frontend_url = os.getenv("URL_FRONTEND", "http://localhost:3000")
@@ -80,8 +80,8 @@ async def social_login(data: SocialLoginRequest):
         
         if data.provider == "google":
             user_info = await get_google_user(data.code, data.redirect_uri)
-        elif data.provider == "facebook":
-            user_info = await get_facebook_user(data.code, data.redirect_uri)
+        elif data.provider == "github":
+            user_info = await get_github_user(data.code, data.redirect_uri)
         elif data.provider == "microsoft":
             user_info = await get_microsoft_user(data.code, data.redirect_uri)
         else:
