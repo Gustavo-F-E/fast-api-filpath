@@ -27,18 +27,19 @@ async def get_current_user(authorization: str = Header(None)):
 
     token = authorization.split(" ")[1]
 
-    # 1. Verificamos token y obtenemos email
-    email = await verify_token(token)
+    # 1. Verificamos token y obtenemos datos
+    token_data = await verify_token(token)
 
-    if email is None:
+    if token_data is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido, expirado o sesión cerrada",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 2. Buscamos usuario real en Mongo
-    user = await get_user_by_email(email)
+    # 2. Buscamos usuario real en Mongo usando email y provider
+    from ..crud import get_user_by_email_and_provider
+    user = await get_user_by_email_and_provider(token_data["email"], token_data["provider"])
 
     if user is None:
         raise HTTPException(
@@ -91,7 +92,7 @@ async def login(data: UserLogin):
 
     access_token_expires = timedelta(minutes=30)
     access_token = create_access_token(
-        data={"sub": user["email"]},  # Siempre usar email para el token
+        data={"sub": user["email"], "provider": user.get("provider", "email")},
         expires_delta=access_token_expires
     )
 
@@ -243,9 +244,9 @@ async def oauth_login(data: OAuthLogin):
                 detail=str(e)
             )
 
-    # 3. Generar JWT exactamente igual que siempre
+    # 3. Generar JWT incluyendo el provider
     access_token = create_access_token(
-        data={"sub": user["email"]},
+        data={"sub": user["email"], "provider": user["provider"]},
         expires_delta=timedelta(minutes=30)
     )
 

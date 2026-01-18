@@ -78,8 +78,16 @@ class Database:
                 return
             
             # Índices para usuarios
-            await cls.database.usuarios.create_index("email", unique=True)
-            await cls.database.usuarios.create_index("username", unique=True)
+            # Intentar borrar índices antiguos de campo único si existen
+            try:
+                await cls.database.usuarios.drop_index("email_1")
+                await cls.database.usuarios.drop_index("username_1")
+            except Exception:
+                pass
+
+            # Crear nuevos índices compuestos únicos
+            await cls.database.usuarios.create_index([("email", 1), ("provider", 1)], unique=True)
+            await cls.database.usuarios.create_index([("username", 1), ("provider", 1)], unique=True)
             await cls.database.usuarios.create_index("provider_id", sparse=True)
             
             # Índices para proyectos

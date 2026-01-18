@@ -178,13 +178,14 @@ async def verify_token(token: str):
         print("🔍 DEBUG: Decodificando token...")
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
+        provider: str = payload.get("provider", "local")
         
         if email is None:
             print("🔍 DEBUG: Token no tiene email")
             return None
         
-        print(f"🔍 DEBUG: Token válido para email: {email}")
-        return email
+        print(f"🔍 DEBUG: Token válido para email: {email} ({provider})")
+        return {"email": email, "provider": provider}
         
     except jwt.ExpiredSignatureError:
         print("🔍 DEBUG: Token expirado")

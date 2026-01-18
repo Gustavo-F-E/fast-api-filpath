@@ -181,7 +181,7 @@ async def get_github_user(code: str, redirect_uri: str):
         # 1. Obtener Token
         response = await client.post(
             token_url, 
-            params=params, 
+            data=params, 
             headers={"Accept": "application/json"}
         )
         if response.status_code != 200:

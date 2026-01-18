@@ -17,11 +17,16 @@ async def create_user(user: UserCreate):
     """Crear nuevo usuario"""
     users_collection = await get_users_collection()  # 🔴 AGREGAR AWAIT
 
-    # Verificar si el usuario ya existe
+    # Verificar si el usuario ya existe para este proveedor
     existing_user = await users_collection.find_one({
-        "$or": [
-            {"email": user.email},
-            {"username": user.username}
+        "$and": [
+            {"provider": user.provider},
+            {
+                "$or": [
+                    {"email": user.email},
+                    {"username": user.username}
+                ]
+            }
         ]
     })
 
@@ -53,9 +58,9 @@ async def authenticate_user(login_input: str, password: str):
     is_email = "@" in login_input
     
     if is_email:
-        user = await users_collection.find_one({"email": login_input})
+        user = await users_collection.find_one({"email": login_input, "provider": "email"})
     else:
-        user = await users_collection.find_one({"username": login_input})
+        user = await users_collection.find_one({"username": login_input, "provider": "email"})
 
     if not user:
         return None
@@ -83,10 +88,20 @@ async def get_user_by_id(user_id: str):
 
 
 async def get_user_by_email(email: str):
-    """Obtener usuario por email"""
-    users_collection = await get_users_collection()  # 🔴 AGREGAR AWAIT
+    """Obtener usuario por email (devuelve el primero que encuentre, usar con precaución)"""
+    users_collection = await get_users_collection()
 
     user = await users_collection.find_one({"email": email})
+    if user:
+        user["_id"] = str(user["_id"])
+    return user
+
+
+async def get_user_by_email_and_provider(email: str, provider: str):
+    """Obtener usuario por email y proveedor específico"""
+    users_collection = await get_users_collection()
+
+    user = await users_collection.find_one({"email": email, "provider": provider})
     if user:
         user["_id"] = str(user["_id"])
     return user
@@ -218,15 +233,13 @@ async def get_user_by_provider(provider: str, provider_id: str):
 async def create_oauth_user(data: dict):
     users_collection = await get_users_collection()
 
-    # Si existe por email
-    existing_user = await users_collection.find_one({"email": data["email"]})
+    # Buscar si ya existe este usuario para ESTE proveedor específico
+    existing_user = await users_collection.find_one({
+        "email": data["email"],
+        "provider": data["provider"]
+    })
+    
     if existing_user:
-        # En este MVP, si el email coincide, permitimos el login/registro
-        # Podríamos actualizar el registro para agregar el provider si no lo tiene
-        if "provider" not in existing_user or existing_user["provider"] != data["provider"]:
-             # Opcional: Actualizar el usuario para reflejar que también usa este provider
-             pass
-        
         existing_user["_id"] = str(existing_user["_id"])
         return existing_user
 

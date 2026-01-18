@@ -23,26 +23,24 @@ async def get_social_auth_url(provider: str):
     """
     Devuelve la URL para redirigir al usuario al proveedor de OAuth.
     """
-    print(f"🔵 [BACKEND] Generando URL de autenticación para: {provider}")
+    print(f"\n🚀 [OAuth Debug] Generando URL para provider: {provider}")
     
+    frontend_url = os.getenv("URL_FRONTEND", "http://localhost:3000").rstrip('/')
+    print(f"   - URL_FRONTEND configurada: {frontend_url}")
     if provider == "google":
         client_id = os.getenv("GOOGLE_CLIENT_ID")
-        frontend_url = os.getenv("URL_FRONTEND", "http://localhost:3000")
         redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", f"{frontend_url}/auth/callback/google")
         scope = "openid email profile"
-        print(f"🔵 [BACKEND] Google Client ID: {client_id}")
         return {
             "url": f"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&access_type=offline"
         }
     elif provider == "github":
-        frontend_url = os.getenv("URL_FRONTEND", "http://localhost:3000")
         client_id = os.getenv("GITHUB_CLIENT_ID")
         redirect_uri = os.getenv("GITHUB_REDIRECT_URI", f"{frontend_url}/auth/callback/github")
-        return {
-            "url": f"https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=user:email"
-        }
+        print(f"   - [GitHub Debug] Redirect URI que se enviará a GitHub: {redirect_uri}")
+        url = f"https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=user:email"
+        return {"url": url}
     elif provider == "microsoft":
-        frontend_url = os.getenv("URL_FRONTEND", "http://localhost:3000")
         client_id = os.getenv("MICROSOFT_CLIENT_ID")
         redirect_uri = os.getenv("MICROSOFT_REDIRECT_URI", f"{frontend_url}/auth/callback/microsoft")
         scope = "User.Read email openid profile"
@@ -60,8 +58,10 @@ async def social_login(data: SocialLoginRequest):
     Recibe el 'code' del frontend, lo valida en el backend y devuelve JWT.
     """
 
-    print(f"🔵 [BACKEND] Iniciando proceso de login social con provider: {data.provider}")
-    print(f"🔵 [BACKEND] Code recibido (truncado): {data.code[:10]}...")
+    print(f"\n📥 [OAuth Debug] Social Login POST recibido")
+    print(f"   - Provider: {data.provider}")
+    print(f"   - Redirect URI recibida: {data.redirect_uri}")
+    print(f"   - Code recibido (truncado): {data.code[:10]}...")
 
     # 🔐 BLOQUEO CONTRA REUSO DEL CODE
     if data.code in used_social_codes:
@@ -90,8 +90,9 @@ async def social_login(data: SocialLoginRequest):
         if not user_info.get("email"):
             raise HTTPException(status_code=400, detail="No se pudo obtener el email del proveedor")
 
-        # 1. Buscar usuario en BD
-        user = await get_user_by_email(user_info["email"])
+        # 1. Buscar usuario en BD (buscamos la combinación de email y proveedor)
+        from ..crud import get_user_by_email_and_provider
+        user = await get_user_by_email_and_provider(user_info["email"], data.provider)
         
         if user:
             print(f"🟢 [BACKEND] Usuario existente encontrado: {user['email']}")
@@ -108,7 +109,7 @@ async def social_login(data: SocialLoginRequest):
         # 2. Generar Token
         access_token_expires = timedelta(minutes=30)
         access_token = create_access_token(
-            data={"sub": user["email"]},
+            data={"sub": user["email"], "provider": user["provider"]},
             expires_delta=access_token_expires
         )
 
