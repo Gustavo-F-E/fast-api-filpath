@@ -2,9 +2,9 @@
 from typing import Optional
 from bson import ObjectId
 from datetime import datetime
-from .database import get_users_collection, get_projects_collection  # Estas son async ahora
+from .database import get_users_collection, get_projects_collection, get_liners_collection, get_machines_collection  # Estas son async ahora
 from .auth import get_password_hash, verify_password
-from .schemas import UserCreate, UserLogin, ProjectCreate, ProjectUpdate
+from .schemas import UserCreate, UserLogin, ProjectCreate, ProjectUpdate, LinerCreate, MachineCreate
 import logging
 
 logger = logging.getLogger(__name__)
@@ -58,9 +58,15 @@ async def authenticate_user(login_input: str, password: str):
     is_email = "@" in login_input
     
     if is_email:
-        user = await users_collection.find_one({"email": login_input, "provider": "email"})
+        user = await users_collection.find_one({
+            "email": login_input, 
+            "$or": [{"provider": "email"}, {"provider": {"$exists": False}}]
+        })
     else:
-        user = await users_collection.find_one({"username": login_input, "provider": "email"})
+        user = await users_collection.find_one({
+            "username": login_input, 
+            "$or": [{"provider": "email"}, {"provider": {"$exists": False}}]
+        })
 
     if not user:
         return None
@@ -149,6 +155,32 @@ async def delete_user(user_id: str):
 
 
 # ============================================================
+#                       HELPERS
+# ============================================================
+
+def calculate_project_completion(project_dict: dict) -> int:
+    """Calcular el porcentaje de finalización de un proyecto"""
+    percentage = 0
+    
+    # Descripción: 10%
+    if project_dict.get("description"):
+        percentage += 10
+        
+    # Liner: 30% (Total 40%)
+    if project_dict.get("liner_name"):
+        percentage += 30
+        
+    # Máquina: 30% (Total 70%)
+    if project_dict.get("machine_name"):
+        percentage += 30
+        
+    # Capas: 30% (Total 100%)
+    if project_dict.get("layers") and len(project_dict.get("layers")) > 0:
+        percentage += 30
+        
+    return percentage
+
+# ============================================================
 #                       CRUD PROYECTOS
 # ============================================================
 
@@ -157,6 +189,7 @@ async def create_project(project: ProjectCreate, user_email: str):
 
     project_dict = project.dict()
     project_dict["user_email"] = user_email
+    project_dict["completion_percentage"] = calculate_project_completion(project_dict)
     project_dict["created_at"] = datetime.utcnow()
     project_dict["updated_at"] = datetime.utcnow()
 
@@ -200,6 +233,14 @@ async def update_project(project_id: str, user_email: str, update_data: ProjectU
     projects_collection = await get_projects_collection()  # 🔴 AGREGAR AWAIT
 
     update_dict = update_data.dict(exclude_unset=True)
+    
+    # Recalcular porcentaje si cambian los campos relevantes
+    # Primero obtenemos el proyecto actual para fusionar estados
+    current_project = await projects_collection.find_one({"_id": ObjectId(project_id)})
+    if current_project:
+        temp_dict = {**current_project, **update_dict}
+        update_dict["completion_percentage"] = calculate_project_completion(temp_dict)
+
     update_dict["updated_at"] = datetime.utcnow()
 
     result = await projects_collection.update_one(
@@ -257,3 +298,55 @@ async def create_oauth_user(data: dict):
     user = await users_collection.find_one({"_id": result.inserted_id})
     user["_id"] = str(user["_id"])
     return user
+
+# ============================================================
+#                       CRUD LINERS
+# ============================================================
+
+async def create_liner(liner: LinerCreate, user_email: str):
+    liners_collection = await get_liners_collection()
+    liner_dict = liner.dict()
+    liner_dict["user_email"] = user_email
+    liner_dict["created_at"] = datetime.utcnow()
+    liner_dict["updated_at"] = datetime.utcnow()
+    
+    # Evitar duplicados por nombre para el mismo usuario
+    await liners_collection.delete_many({"name": liner.name, "user_email": user_email})
+    
+    result = await liners_collection.insert_one(liner_dict)
+    created = await liners_collection.find_one({"_id": result.inserted_id})
+    created["_id"] = str(created["_id"])
+    return created
+
+async def get_user_liners(user_email: str):
+    liners_collection = await get_liners_collection()
+    liners = await liners_collection.find({"user_email": user_email}).to_list(length=100)
+    for l in liners:
+        l["_id"] = str(l["_id"])
+    return liners
+
+# ============================================================
+#                       CRUD MAQUINAS
+# ============================================================
+
+async def create_machine(machine: MachineCreate, user_email: str):
+    machines_collection = await get_machines_collection()
+    machine_dict = machine.dict()
+    machine_dict["user_email"] = user_email
+    machine_dict["created_at"] = datetime.utcnow()
+    machine_dict["updated_at"] = datetime.utcnow()
+    
+    # Evitar duplicados por nombre para el mismo usuario
+    await machines_collection.delete_many({"name": machine.name, "user_email": user_email})
+    
+    result = await machines_collection.insert_one(machine_dict)
+    created = await machines_collection.find_one({"_id": result.inserted_id})
+    created["_id"] = str(created["_id"])
+    return created
+
+async def get_user_machines(user_email: str):
+    machines_collection = await get_machines_collection()
+    machines = await machines_collection.find({"user_email": user_email}).to_list(length=100)
+    for m in machines:
+        m["_id"] = str(m["_id"])
+    return machines

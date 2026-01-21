@@ -91,9 +91,16 @@ class Database:
             await cls.database.usuarios.create_index("provider_id", sparse=True)
             
             # Índices para proyectos
-            await cls.database.proyectos.create_index("user_id")
-            await cls.database.proyectos.create_index([("user_id", 1), ("created_at", -1)])
-            await cls.database.proyectos.create_index([("user_id", 1), ("name", 1)])
+            await cls.database.proyectos.create_index("user_email")
+            await cls.database.proyectos.create_index([("user_email", 1), ("created_at", -1)])
+            
+            # Índices para liners
+            await cls.database.liners.create_index("user_email")
+            await cls.database.liners.create_index("name")
+            
+            # Índices para maquinas
+            await cls.database.maquinas.create_index("user_email")
+            await cls.database.maquinas.create_index("name")
             
             # 🔴 NUEVO: Índices para blacklisted_tokens
             # Índice TTL para expiración automática
@@ -144,6 +151,16 @@ async def get_blacklisted_tokens_collection():
     db = await get_db()
     return db.blacklisted_tokens
 
+async def get_liners_collection():
+    """Obtener colección de liners (async)"""
+    db = await get_db()
+    return db.liners
+
+async def get_machines_collection():
+    """Obtener colección de maquinas (async)"""
+    db = await get_db()
+    return db.maquinas
+
 # ============================================================
 # FUNCIONES SÍNCRONAS PARA COMPATIBILIDAD (opcional)
 # ============================================================
@@ -185,5 +202,17 @@ async def initialize_database():
         
     except Exception as e:
         logger.error(f"❌ Error verificando colecciones: {e}")
+    
+    # Migración: Asegurar que todos los usuarios tengan el campo 'provider'
+    try:
+        users_collection = await get_users_collection()
+        migration_result = await users_collection.update_many(
+            {"provider": {"$exists": False}},
+            {"$set": {"provider": "email"}}
+        )
+        if migration_result.modified_count > 0:
+            logger.info(f"🔄 Migración: {migration_result.modified_count} usuarios actualizados con provider='email'")
+    except Exception as e:
+        logger.error(f"❌ Error durante la migración de usuarios: {e}")
     
     return True

@@ -52,19 +52,21 @@ c:\Proyectos\FastAPI\
 
 ```
 app/
-├── __init__.py                         # Inicializador del paquete
-├── main.py                             # Aplicación FastAPI principal (136 líneas)
-├── database.py                         # Gestión de conexión a MongoDB (175 líneas)
-├── crud.py                             # Operaciones CRUD de base de datos
-├── auth.py                             # Lógica de autenticación
-├── models.py                           # (Vacío - reservado para modelos ODM)
-├── schemas.py                          # Esquemas Pydantic para validación (151 líneas)
+├── __init__.py
+├── main.py                             # Aplicación FastAPI principal
+├── database.py                         # Gestión de conexión a MongoDB y creación de índices
+├── crud.py                             # Operaciones CRUD generales
+├── auth.py                             # Lógica de seguridad y JWT
+├── schemas.py                          # Esquemas Pydantic (User, Project, Liner, Machine, Token)
+├── social_auth.py                      # (Opcional) Lógica adicional para OAuth
 └── routes/                             # Enrutadores de la API
     ├── __init__.py
-    ├── auth.py                         # Rutas de autenticación
-    ├── users.py                        # Rutas de gestión de usuarios
-    ├── projects.py                     # Rutas de gestión de proyectos
-    └── __pycache__/
+    ├── auth.py                         # Login/Logout/Registro
+    ├── users.py                        # Perfil de usuario
+    ├── projects.py                     # Gestión de proyectos
+    ├── liners.py                       # Gestión de Liners
+    ├── machines.py                     # Gestión de Máquinas
+    └── social.py                       # Autenticación Social (Google, GitHub, etc.)
 ```
 
 ### 📋 Descripciones de módulos:
@@ -89,10 +91,11 @@ app/
 
 ```python
 - PyObjectId         # Conversión de IDs de MongoDB para Pydantic v2
-- UserBase           # Base para usuarios (email, username)
-- UserCreate         # Esquema para creación de usuarios
-- UserLogin          # (Comentado) Esquema para login
-- Otros esquemas...
+- UserBase, UserCreate, UserLogin, UserResponse
+- ProjectBase, ProjectCreate, ProjectUpdate, ProjectResponse
+- LinerBase, LinerSection, LinerCreate, LinerResponse
+- MachineBase, MachineAxis, MachineCreate, MachineResponse
+- Token, TokenData, OAuthLogin
 ```
 
 #### **auth.py** - Autenticación
@@ -176,9 +179,9 @@ run.py o app.py → uvicorn
 
 1. **Lifespan**: Ejecuta `initialize_database()`
 2. **Conexión MongoDB**: Conecta a Atlas con MONGODB_URI
-3. **Creación de índices**: Establece índices en colecciones
-4. **Registro de rutas**: Auth, Users, Projects
-5. **Listo**: API lista en `http://localhost:8000`
+3. **Creación de índices**: Establece índices en `usuarios`, `proyectos`, `liners`, `maquinas` y `blacklisted_tokens` (TTL).
+4. **Registro de rutas**: Auth, Users, Projects, Liners, Machines, Social.
+5. **Listo**: API lista.
 
 ---
 
@@ -194,9 +197,12 @@ run.py o app.py → uvicorn
 ### De app/main.py (API principal):
 
 -   `/docs` → Swagger UI
--   `/auth/*` → Autenticación
+-   `/auth/*` → Autenticación (Login, Registro, Session)
 -   `/users/*` → Gestión de usuarios
 -   `/projects/*` → Gestión de proyectos
+-   `/liners/*` → Gestión de liners
+-   `/machines/*` → Gestión de máquinas
+-   `/social/*` → Login con proveedores sociales
 
 ---
 

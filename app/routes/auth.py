@@ -157,7 +157,6 @@ async def register(user: UserCreate):
 @router.get("/auth/me", response_model=UserResponse)
 async def read_users_me(current_user: dict = Depends(get_current_user)):
     """Obtener información del usuario actual"""
-    print("🔍 Authorization header:", request.headers.get("authorization"))
     return current_user
 
 # ============================
