@@ -2,9 +2,9 @@
 from typing import Optional
 from bson import ObjectId
 from datetime import datetime
-from .database import get_users_collection, get_projects_collection, get_liners_collection, get_machines_collection  # Estas son async ahora
+from .database import get_users_collection, get_projects_collection, get_liners_collection, get_machines_collection, get_materials_collection  # Estas son async ahora
 from .auth import get_password_hash, verify_password
-from .schemas import UserCreate, UserLogin, ProjectCreate, ProjectUpdate, LinerCreate, MachineCreate
+from .schemas import UserCreate, UserLogin, ProjectCreate, ProjectUpdate, LinerCreate, MachineCreate, LinerUpdate, MachineUpdate, LayerCreate, LayerUpdate, MaterialCreate, MaterialUpdate
 import logging
 
 logger = logging.getLogger(__name__)
@@ -325,6 +325,24 @@ async def get_user_liners(user_email: str):
         l["_id"] = str(l["_id"])
     return liners
 
+async def update_liner(liner_id: str, user_email: str, update_data: LinerUpdate):
+    liners_collection = await get_liners_collection()
+    update_dict = update_data.dict(exclude_unset=True)
+    update_dict["updated_at"] = datetime.utcnow()
+    
+    result = await liners_collection.update_one(
+        {"_id": ObjectId(liner_id), "user_email": user_email},
+        {"$set": update_dict}
+    )
+    return result.modified_count > 0
+
+async def delete_liner(liner_id: str, user_email: str):
+    liners_collection = await get_liners_collection()
+    result = await liners_collection.delete_one(
+        {"_id": ObjectId(liner_id), "user_email": user_email}
+    )
+    return result.deleted_count > 0
+
 # ============================================================
 #                       CRUD MAQUINAS
 # ============================================================
@@ -350,3 +368,159 @@ async def get_user_machines(user_email: str):
     for m in machines:
         m["_id"] = str(m["_id"])
     return machines
+
+async def update_machine(machine_id: str, user_email: str, update_data: MachineUpdate):
+    machines_collection = await get_machines_collection()
+    update_dict = update_data.dict(exclude_unset=True)
+    update_dict["updated_at"] = datetime.utcnow()
+    
+    result = await machines_collection.update_one(
+        {"_id": ObjectId(machine_id), "user_email": user_email},
+        {"$set": update_dict}
+    )
+    return result.modified_count > 0
+
+async def delete_machine(machine_id: str, user_email: str):
+    machines_collection = await get_machines_collection()
+    result = await machines_collection.delete_one(
+        {"_id": ObjectId(machine_id), "user_email": user_email}
+    )
+    return result.deleted_count > 0
+
+# ============================================================
+#                       CRUD CAPAS (LAYERS)
+# ============================================================
+
+async def add_project_layer(project_id: str, user_email: str, layer: LayerCreate):
+    """Añadir una capa a un proyecto"""
+    projects_collection = await get_projects_collection()
+    
+    layer_dict = layer.dict()
+    layer_dict["id"] = str(ObjectId())
+    
+    # Obtener el proyecto actual para recalcular progreso
+    project = await projects_collection.find_one({"_id": ObjectId(project_id), "user_email": user_email})
+    if not project:
+        return None
+        
+    layers = project.get("layers", [])
+    layers.append(layer_dict)
+    
+    # Recalcular progreso
+    completion = calculate_project_completion({**project, "layers": layers})
+    
+    await projects_collection.update_one(
+        {"_id": ObjectId(project_id), "user_email": user_email},
+        {
+            "$set": {
+                "layers": layers,
+                "completion_percentage": completion,
+                "updated_at": datetime.utcnow()
+            }
+        }
+    )
+    
+    return layer_dict
+
+async def update_project_layer(project_id: str, layer_id: str, user_email: str, layer_update: LayerUpdate):
+    """Actualizar una capa específica de un proyecto"""
+    projects_collection = await get_projects_collection()
+    
+    project = await projects_collection.find_one({"_id": ObjectId(project_id), "user_email": user_email})
+    if not project:
+        return None
+        
+    layers = project.get("layers", [])
+    updated = False
+    new_layers = []
+    
+    update_data = layer_update.dict(exclude_unset=True)
+    
+    for l in layers:
+        if l.get("id") == layer_id:
+            updated_layer = {**l, **update_data}
+            new_layers.append(updated_layer)
+            updated = True
+        else:
+            new_layers.append(l)
+            
+    if not updated:
+        return None
+        
+    completion = calculate_project_completion({**project, "layers": new_layers})
+    
+    await projects_collection.update_one(
+        {"_id": ObjectId(project_id), "user_email": user_email},
+        {
+            "$set": {
+                "layers": new_layers,
+                "completion_percentage": completion,
+                "updated_at": datetime.utcnow()
+            }
+        }
+    )
+    
+    return True
+
+async def delete_project_layer(project_id: str, layer_id: str, user_email: str):
+    """Eliminar una capa específica de un proyecto"""
+    projects_collection = await get_projects_collection()
+    
+    project = await projects_collection.find_one({"_id": ObjectId(project_id), "user_email": user_email})
+    if not project:
+        return False
+        
+    layers = project.get("layers", [])
+    new_layers = [l for l in layers if l.get("id") != layer_id]
+    
+    if len(new_layers) == len(layers):
+        return False
+        
+    completion = calculate_project_completion({**project, "layers": new_layers})
+    
+    await projects_collection.update_one(
+        {"_id": ObjectId(project_id), "user_email": user_email},
+        {
+            "$set": {
+                "layers": new_layers,
+                "completion_percentage": completion,
+                "updated_at": datetime.utcnow()
+            }
+        }
+    )
+    
+    return True
+
+# ============================================================
+#                       CRUD MATERIALES
+# ============================================================
+
+async def create_material(material: MaterialCreate, user_email: str):
+    """Crear o actualizar material (duplicados por nombre se sobreescriben)"""
+    materials_collection = await get_materials_collection()
+    material_dict = material.dict()
+    material_dict["user_email"] = user_email
+    material_dict["created_at"] = datetime.utcnow()
+    material_dict["updated_at"] = datetime.utcnow()
+    
+    # Evitar duplicados por nombre para el mismo usuario
+    await materials_collection.delete_many({"name": material.name, "user_email": user_email})
+    
+    result = await materials_collection.insert_one(material_dict)
+    created = await materials_collection.find_one({"_id": result.inserted_id})
+    created["_id"] = str(created["_id"])
+    return created
+
+async def get_user_materials(user_email: str):
+    """Obtener todos los materiales de un usuario"""
+    materials_collection = await get_materials_collection()
+    materials = await materials_collection.find({"user_email": user_email}).to_list(length=100)
+    for m in materials:
+        m["_id"] = str(m["_id"])
+    return materials
+
+async def delete_material(material_id: str, user_email: str):
+    """Eliminar un material"""
+    materials_collection = await get_materials_collection()
+    result = await materials_collection.delete_one({"_id": ObjectId(material_id), "user_email": user_email})
+    return result.deleted_count > 0

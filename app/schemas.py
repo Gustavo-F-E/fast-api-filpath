@@ -166,6 +166,13 @@ class LinerBase(BaseModel):
 class LinerCreate(LinerBase):
     pass
 
+class LinerUpdate(BaseModel):
+    name: Optional[str] = None
+    tipo_liner: Optional[str] = None
+    extremo_inicial: Optional[LinerSection] = None
+    medio: Optional[LinerSection] = None
+    extremo_final: Optional[LinerSection] = None
+
 class LinerInDB(LinerBase):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     created_at: datetime
@@ -201,6 +208,17 @@ class MachineBase(BaseModel):
 class MachineCreate(MachineBase):
     pass
 
+class MachineUpdate(BaseModel):
+    name: Optional[str] = None
+    tipo: Optional[str] = None
+    posicion_inicial: Optional[str] = None
+    coordenadas: Optional[dict] = None
+    giro_mandril: Optional[MachineAxis] = None
+    longitudinal: Optional[MachineAxis] = None
+    giro_devanador: Optional[MachineAxis] = None
+    acercamiento_devanador: Optional[MachineAxis] = None
+    velocidad_maquina: Optional[float] = None
+
 class MachineInDB(MachineBase):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     created_at: datetime
@@ -232,3 +250,68 @@ class OAuthLogin(BaseModel):
     username: str
     provider: str
     provider_id: str
+
+# ========== CAPAS (LAYERS) ==========
+class LayerBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    longitud_util: float = 0
+    espesor: float = 0
+    coeficiente_rozamiento: float = 0
+    pines: int = 0
+    alfa_original: float = 0
+    alfa_corregido: float = 0
+    velocidad_de_alimentacion: float = 0
+    ancho: float = 0
+    ancho_eff: float = 0
+    NP: int = 0
+    patron_elegido: int = 0
+    orden_capa: int = 0
+
+class LayerCreate(LayerBase):
+    pass
+
+class LayerUpdate(BaseModel):
+    longitud_util: Optional[float] = None
+    espesor: Optional[float] = None
+    coeficiente_rozamiento: Optional[float] = None
+    pines: Optional[int] = None
+    alfa_original: Optional[float] = None
+    alfa_corregido: Optional[float] = None
+    velocidad_de_alimentacion: Optional[float] = None
+    ancho: Optional[float] = None
+    ancho_eff: Optional[float] = None
+    NP: Optional[int] = None
+    patron_elegido: Optional[int] = None
+    orden_capa: Optional[int] = None
+
+class LayerResponse(LayerBase):
+    id: str
+
+# ========== MATERIALES ==========
+class MaterialBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    espesor: float = 0
+    ancho: float = 0
+    coeficiente_rozamiento: float = 0
+
+class MaterialCreate(MaterialBase):
+    pass
+
+class MaterialUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    espesor: Optional[float] = None
+    ancho: Optional[float] = None
+    coeficiente_rozamiento: Optional[float] = None
+
+class MaterialResponse(MaterialBase):
+    id: str = Field(validation_alias=AliasChoices("_id", "id"))
+    user_email: EmailStr
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {
+        "json_encoders": {ObjectId: str},
+    }

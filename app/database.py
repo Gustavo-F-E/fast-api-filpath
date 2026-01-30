@@ -101,6 +101,10 @@ class Database:
             # Índices para maquinas
             await cls.database.maquinas.create_index("user_email")
             await cls.database.maquinas.create_index("name")
+
+            # Índices para materiales
+            await cls.database.materiales.create_index("user_email")
+            await cls.database.materiales.create_index("name")
             
             # 🔴 NUEVO: Índices para blacklisted_tokens
             # Índice TTL para expiración automática
@@ -160,6 +164,11 @@ async def get_machines_collection():
     """Obtener colección de maquinas (async)"""
     db = await get_db()
     return db.maquinas
+
+async def get_materials_collection():
+    """Obtener colección de materiales (async)"""
+    db = await get_db()
+    return db.materiales
 
 # ============================================================
 # FUNCIONES SÍNCRONAS PARA COMPATIBILIDAD (opcional)

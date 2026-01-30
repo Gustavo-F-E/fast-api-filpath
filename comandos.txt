@@ -16,7 +16,7 @@ uvicorn app:app --reload
 pip freeze > requirements.txt
 
 Desactivar proxy temporalmente para instalar paquetes de pip:
-(venv) PS C:\Proyectos\FastAPI> reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f
+(venv) PS C:\Proyecto PWA2\proyecto-PWA-FastAPI> reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f
 La operación se completó correctamente.
 
 python -m venv venv

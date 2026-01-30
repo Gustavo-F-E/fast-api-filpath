@@ -7,7 +7,7 @@ from datetime import datetime
 import os
 
 from .database import Database, initialize_database
-from .routes import auth, users, projects, social, liners, machines
+from .routes import auth, users, projects, social, liners, machines, materials
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -50,6 +50,7 @@ app.include_router(projects.router)
 app.include_router(social.router)
 app.include_router(liners.router)
 app.include_router(machines.router)
+app.include_router(materials.router)
 
 # ==================== RUTAS BÁSICAS ====================
 
